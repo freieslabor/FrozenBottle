@@ -21,7 +21,10 @@ maxLED = 240
 # mapping for the various types.
 # 'a' means the color-mapping is GRB
 # 'b' means the color-mapping is BRG
-LEDmap = "aaababaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+# Einstellen: alle auf 'a', ganz-gruenes Bild senden, dann fuer alle blauen LEDs Buchstaben auf 'b' aendern.
+LEDmap = ( "aaababaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" )
 
 
 sock = None
@@ -42,6 +45,7 @@ def main(args):
 	data = sock.recv(10000)
 
 	print "start loop, listen-port %u" % UDPport
+	print "sending to %s" % serport
 	try:
 		while(data):
 			print "UDP data %s" % repr(data)[:55]
@@ -50,7 +54,10 @@ def main(args):
 	except socket.timeout:
 		sock.close()
 
+	return 0
 
+
+# Eine Zeile Input verarbeiten: Auf 5-bit kuerzen, RGB Komponenten umordnen, alles an tty senden.
 def proc_input(dat):
 	global ser
 
@@ -86,6 +93,6 @@ def proc_input(dat):
 
 
 if __name__=='__main__':
-	main(sys.argv[1:])
+	sys.exit(main(sys.argv[1:]))
 
 
