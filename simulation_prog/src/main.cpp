@@ -20,14 +20,15 @@ for i in xrange(256):
  print "%3u   %.2f" % (i,i*q)
 */
 
-#define STEP_X 52
-#define STEP_Y 45
-//#define STEP_X 60
-//#define STEP_Y 52
+#define STEP_X 37
+#define STEP_Y 32
+
+#define GLASSES_FIRST_ROW 14
+#define GLASSES_HIGH 7
 
 #define HEX_TEX_SIZE 128
 
-#define WINDOW_GFX_WIDTH 960
+#define WINDOW_GFX_WIDTH 1158
 #define WINDOW_GFX_HEIGHT 600
 
 HexArray field;
@@ -63,8 +64,8 @@ int main(int argc, char* argv[])
 		goto leave;
 	}
 
-	field.setup_square( 8 , 5 , false , false , false , true );
-//	field.setup_triangle( 6 , true , true );
+	field.setup_square( GLASSES_FIRST_ROW , GLASSES_HIGH , false , false , false , true );
+//	field.setup_triangle( 7 , true , true );
 
 
 	res = SDL_Init( SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS );
@@ -307,8 +308,8 @@ bool get_cell_screen_coord(unsigned int seq_idx,int *out_w,int *out_h,unsigned i
   int w,h;
 	if(!field.get_sequence_item(seq_idx,&w,&h,&col))
 		return false;
-	w = (HEX_TEX_SIZE>>1) + w*STEP_X;
-	h = WINDOW_GFX_HEIGHT - (HEX_TEX_SIZE>>1) - h*STEP_Y;
+	w = STEP_X + (STEP_X>>3) + w*STEP_X;
+	h = WINDOW_GFX_HEIGHT - STEP_Y - (STEP_Y>>2) - h*STEP_Y;
 	*out_w = w;
 	*out_h = h;
 	if(out_color)

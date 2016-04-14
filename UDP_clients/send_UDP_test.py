@@ -2,11 +2,15 @@
 
 # program to send some blinking to UDP for the flozen-bottle setup.
 
+ADDRESS = "192.168.7.7"
+#ADDRESS = "127.0.0.1"
+PORT = 8901
 
 import socket
 import sys
 import time
 
+NUM_LEDS=13
 
 def main(args):
 
@@ -22,7 +26,7 @@ def main(args):
 		sys.stderr.write("cannot use args %s\n"%repr(aa))
 		return 1
 
-	port = 8901
+	port = PORT
 
 	if 'p' in ao:
 		port = int(ao['p'])
@@ -33,13 +37,13 @@ def main(args):
 
 
 	s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-	host = "127.0.0.1"
+	host = ADDRESS
 	buf = 1024
 	addr = (host,port)
 
 
-	cols  = ("\x80\x00\x00","\x00\x80\x00","\x00\x00\x80","\x80\x80\x80")
-	cols0 = ("\x40\x00\x00","\x00\x40\x00","\x00\x00\x40","\x40\x40\x40")
+	cols  = ("\xC0\x30\x30","\x30\xC0\x30","\x30\x30\xC0","\xB0\xB0\xB0")
+	cols0 = ("\x80\x00\x00","\x00\x80\x00","\x00\x00\x80","\x70\x70\x70")
 
 	print "sending to %s:%u" % (host,port)
 
@@ -47,7 +51,7 @@ def main(args):
 		print " i = %u" % i
 		c = cols[(i//17)%4]
 		c0 = cols0[(i//17)%4]
-		leng = 20
+		leng = NUM_LEDS
 		pos = i%leng
 		line = (c0*pos) + c + (c0*(leng-1-pos))
 		s.sendto(line,addr)
