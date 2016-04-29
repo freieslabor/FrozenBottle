@@ -10,7 +10,7 @@ import socket
 import sys
 import time
 
-NUM_LEDS=13
+NUM_LEDS=64
 
 def main(args):
 
