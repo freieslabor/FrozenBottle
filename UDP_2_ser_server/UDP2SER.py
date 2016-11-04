@@ -22,9 +22,23 @@ maxLED = 240
 # 'a' means the color-mapping is GRB
 # 'b' means the color-mapping is BRG
 # Einstellen: alle auf 'a', ganz-gruenes Bild senden, dann fuer alle blauen LEDs Buchstaben auf 'b' aendern.
-LEDmap = ( "aaababaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
-           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
-           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" )
+#LEDmap = ( "aaaabaabaaabaa" +
+#           "baaaaaabaabba" +
+#           "aababaaaaaabaa" +
+#           "babbabbabbbbb" +
+#           "aaaaaaaaaaaaaa" +
+#           "aaaaaaaaaaaaa" +
+#           "aaaaaaaaaaaaaa" +
+#           "aaaaaaaaaaaaa" )
+
+LEDmap = ( "bbbbaaaaaa" +
+           "bbababaabb" +
+           "bbabaabbab" +
+           "bbababaaab" +
+           "bbabbbaaaa" )
+
+if len(LEDmap)<1024:
+	LEDmap = LEDmap + ('a'*(1024-len(LEDmap)))
 
 
 sock = None
@@ -48,7 +62,7 @@ def main(args):
 	print "sending to %s" % serport
 	try:
 		while(data):
-			print "UDP data %s" % repr(data)[:55]
+			## #print "UDP data %s" % repr(data)[:55]
 			proc_input(data)
 			data = sock.recv(10000)
 	except socket.timeout:

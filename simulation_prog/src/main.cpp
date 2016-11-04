@@ -28,8 +28,10 @@ for i in xrange(256):
 
 #define HEX_TEX_SIZE 128
 
-#define WINDOW_GFX_WIDTH 1158
-#define WINDOW_GFX_HEIGHT 600
+//#define WINDOW_GFX_WIDTH 1158 // for full setup
+//#define WINDOW_GFX_HEIGHT 600
+#define WINDOW_GFX_WIDTH 800  // for temporary 50-glass setup
+#define WINDOW_GFX_HEIGHT 400
 
 HexArray field;
 
@@ -64,8 +66,13 @@ int main(int argc, char* argv[])
 		goto leave;
 	}
 
-	field.setup_square( GLASSES_FIRST_ROW , GLASSES_HIGH , false , false , false , true );
-//	field.setup_triangle( 7 , true , true );
+
+	// for full setup
+//	field.setup_square( GLASSES_FIRST_ROW , GLASSES_HIGH , false , false , false , true );
+
+
+	// for temporary 50-glass setup
+	field.setup_square( 10 , 5 , false , true , false , true );
 
 
 	res = SDL_Init( SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS );
