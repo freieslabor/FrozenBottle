@@ -43,6 +43,8 @@ def main(args):
 		for j in xrange(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			rgb_tuple = (0.0,0.0,1.0)
+			if (i%10)==2:
+				rgb_tuple = (0.1,0.1,0.1)
 			if (i%LedClientBase.NUMLEDS)==j:
 				rgb_tuple = (1.0,1.0,1.0)
 
