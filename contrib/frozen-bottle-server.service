@@ -1,0 +1,12 @@
+[Unit]
+Description=Frozen Bottle UDP Server
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/FrozenBottle/UDP_2_ser_server/UDP2SER.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
