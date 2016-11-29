@@ -51,8 +51,8 @@ def main(args):
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
 		LedClientBase.send("".join(lin))
 
-		time.sleep(0.017)
-		t += 0.017
+		time.sleep(0.040)
+		t += 0.040
 
 	LedClientBase.closedown()
 

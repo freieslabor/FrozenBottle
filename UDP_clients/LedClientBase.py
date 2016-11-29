@@ -121,17 +121,19 @@ def _fill_mappings(seq2pos, pos2seq):
 			x+=2
 			if x>maxX:
 				x+=1;y+=2
-				if x>maxX:
+				while x>maxX:
 					x-=2
 		else:
 			# to left
 			x-=2
 			if x<0:
 				x-=1;y+=2
-				if x<0:
+				while x<0:
 					x+=2
 
 _fill_mappings(SEQ2POS, POS2SEQ)
+#for i in xrange(len(SEQ2POS)):
+#	print "%3d 0x%08X" % (i,SEQ2POS[i])
 
 if __name__=="__main__":
 	sys.exit(main(sys.argv[1:]))

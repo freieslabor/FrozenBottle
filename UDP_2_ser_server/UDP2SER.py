@@ -26,12 +26,12 @@ LEDmap = (
            "ababaababaabbb" +
            "bbbbbbbbabbbb" +
            "bbbaaabbbbbbaa" +
-           "abbbbbbbabaab" +
+           "aabbbbbbabaab" +
            "bbaabbbbabbbaa" +
            "abbbbaaabbbbb" +
-           "baabaaaaabbaab" +
-           "aaaaaaaaaaaaa" +
-           "aaaaaaaaaaaaaa" +
+           "baabaaaaabbaaa" +
+           "bbabbaabbbbba" +
+           "ababbaaaaaaaaa" +
            "aaaaaaaaaaaaa" +
            "aaaaaaaaaaaaaa" +
            "aaaaaaaaaaaaa" +
@@ -40,12 +40,6 @@ LEDmap = (
            "aaaaaaaaaaaaaa" +
            "aaaaaaaaaaaaa" )
 
-# Das war fuer das kleine 50er setup
-#LEDmap = ( "bbbbaaaaaa" +
-#           "bbababaabb" +
-#           "bbabaabbab" +
-#           "bbababaaab" +
-#           "bbabbbaaaa" )
 
 if len(LEDmap)<1024:
 	LEDmap = LEDmap + ('a'*(1024-len(LEDmap)))
