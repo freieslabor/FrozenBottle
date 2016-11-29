@@ -73,7 +73,7 @@ def color_calc_func_1(frameNo,seq_id,xx,yy):
 		col_cyc_idx = yy
 	if dot==seq_id:
 		return (1.0,1.0,1.0)
-	return LedClientBase.hsv2rgb_float(((t+0.125*col_cyc_idx)/3.0)%1.0,0.5,1.0)
+	return LedClientBase.hsv2rgb_float(((t+0.125*col_cyc_idx)/3.0)%1.0,0.75,1.0)
 
 def color_calc_func_2(frameNo,seq_id,xx,yy):
 	xx = 0.5*(xx-13)

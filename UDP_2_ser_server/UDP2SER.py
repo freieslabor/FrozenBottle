@@ -22,20 +22,30 @@ maxLED = 240
 # 'a' means the color-mapping is GRB
 # 'b' means the color-mapping is BRG
 # Einstellen: alle auf 'a', ganz-gruenes Bild senden, dann fuer alle blauen LEDs Buchstaben auf 'b' aendern.
-#LEDmap = ( "aaaabaabaaabaa" +
-#           "baaaaaabaabba" +
-#           "aababaaaaaabaa" +
-#           "babbabbabbbbb" +
-#           "aaaaaaaaaaaaaa" +
-#           "aaaaaaaaaaaaa" +
-#           "aaaaaaaaaaaaaa" +
-#           "aaaaaaaaaaaaa" )
+LEDmap = (
+           "ababaababaabbb" +
+           "bbbbbbbbabbbb" +
+           "bbbaaabbbbbbaa" +
+           "abbbbbbbabaab" +
+           "bbaabbbbabbbaa" +
+           "abbbbaaabbbbb" +
+           "baabaaaaabbaab" +
+           "aaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaaa" +
+           "aaaaaaaaaaaaa" )
 
-LEDmap = ( "bbbbaaaaaa" +
-           "bbababaabb" +
-           "bbabaabbab" +
-           "bbababaaab" +
-           "bbabbbaaaa" )
+# Das war fuer das kleine 50er setup
+#LEDmap = ( "bbbbaaaaaa" +
+#           "bbababaabb" +
+#           "bbabaabbab" +
+#           "bbababaaab" +
+#           "bbabbbaaaa" )
 
 if len(LEDmap)<1024:
 	LEDmap = LEDmap + ('a'*(1024-len(LEDmap)))
@@ -103,6 +113,7 @@ def proc_input(dat):
 	dat = (''.join(ol))+"SEQ-END."
 	del ol
 
+	print repr(dat)[:70]
 	ser.write(dat)
 
 
