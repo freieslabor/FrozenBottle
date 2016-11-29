@@ -80,7 +80,12 @@ int main(int argc, char* argv[])
 		{errtxt="error initializing SDL lib.";goto leave;}
 	sdl_started=true;
 
-	wnd = SDL_CreateWindow("hexstack",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,WINDOW_GFX_WIDTH,WINDOW_GFX_HEIGHT,0);
+	wnd = SDL_CreateWindow(
+			"hexstack",
+			SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,
+			WINDOW_GFX_WIDTH,WINDOW_GFX_HEIGHT,
+			SDL_WINDOW_RESIZABLE
+	);
 	if(!wnd)
 		{errtxt="Error creating window";goto leave;}
 
