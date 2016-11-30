@@ -143,7 +143,8 @@ def main(args):
 	if aa.address is not None:
 		address = aa.address
 
-	LedClientBase.connect(address,port)
+	if not LedClientBase.connect(address,port):
+		return 1
 
 	t = 0.0
 

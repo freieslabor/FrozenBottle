@@ -32,6 +32,7 @@ def connect(address,port=DEFAULT_PORT):
 	sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 	addr = (address,port)
 	print "sending to UDP %s:%u" % (address,port)
+	return True
 
 def send(data):
 	global addr
