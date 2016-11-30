@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Run some programs for the FrozenBottle in an endless-loop.
+# list of programs is in the bash-array 'progs' in first line.
+
 declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py")
 
 if [ -z "$1" ]; then
@@ -7,6 +10,10 @@ if [ -z "$1" ]; then
   exit 1
 fi
 ADDR=$1
+
+RED='\033[0;31m'
+HL='\033[0;36m'
+NC='\033[0m' # No Color
 
 function cleanup {
   if [ -z "$PID" ]; then
@@ -18,7 +25,7 @@ function cleanup {
 }
 
 function runit {
-  echo running $1
+  echo -e "${HL}running $1 $NC"
 #  trap "echo breaking $PID; kill $PID; return 1" SIGINT SIGTERM
   trap "cleanup;return 1" SIGINT SIGTERM SIGHUP
   "$1" $2 &
@@ -36,15 +43,16 @@ function runit {
   done
   # if still running here, consider ok.
   if kill -0 "$PID" >/dev/null 2>&1; then
-    # runs. so kill and return OK.
-    kill $PID >/dev/null 2>&1
-    wait $PID
-    return 0
+    # runs. So we will return OK.
+    RETVAL=0
+  else
+    echo -e "${RED}$1 exited early.$NC" >&2
+    RETVAL=1
   fi
   kill $PID >/dev/null 2>&1
   wait $PID
   trap - SIGINT SIGTERM SIGHUP
-  return 1
+  return $RETVAL
 }
 
 
@@ -54,7 +62,7 @@ do
   for prg in "${progs[@]}"; do
     runit "$prg" $ADDR
     if [ $? -ne 0 ]; then
-      echo "failed. exiting." 1>&2;exit 1
+      echo "exiting." 1>&2;exit 1
     fi
     sleep 1
   done
