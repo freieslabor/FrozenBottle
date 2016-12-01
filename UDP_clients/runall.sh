@@ -3,7 +3,8 @@
 # Run some programs for the FrozenBottle in an endless-loop.
 # list of programs is in the bash-array 'progs' in first line.
 
-declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py")
+    # left out photo.py, as it uses PIL...
+declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py" "./spriteMove.py")
 
 if [ -z "$1" ]; then
   echo "missing argument for target address" >&2
