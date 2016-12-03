@@ -11,8 +11,8 @@ import LedClientBase
 
 DEFAULT_PORT = 8901
 
-ORIGIN_X = 13
-ORIGIN_Y = 5*2
+ORIGIN_X = 6*2
+ORIGIN_Y = 6*2
 SCALE_X = 0.5
 SCALE_Y = 0.5*math.cos(30*math.pi/180.0)
 TIMESTEP = 0.067
@@ -77,7 +77,7 @@ def color_calc_func_3(frameNo,seq_id,xx,yy):
 		return (1.0,1.0,1.0)
 	t = frameNo*TIMESTEP
 	ang = math.atan2(y,x)
-	rad = math.sqrt(r2)
+	#rad = math.sqrt(r2)
 	ang += (((frameNo*TIMESTEP*ROTSPEED)%1.0)*2.0*math.pi)
 	ang -= 0.02*r2
 	# scale ang to 0..1

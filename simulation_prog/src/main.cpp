@@ -20,18 +20,21 @@ for i in xrange(256):
  print "%3u   %.2f" % (i,i*q)
 */
 
-#define STEP_X 37
-#define STEP_Y 32
-
 #define GLASSES_FIRST_ROW 14
-#define GLASSES_HIGH 12
+#define GLASSES_HIGH 14
+
+//#define STEP_X 37
+//#define STEP_Y 32
+//#define WINDOW_GFX_WIDTH 1056
+//#define WINDOW_GFX_HEIGHT 950
+
+#define STEP_X 30
+#define STEP_Y 26
+#define WINDOW_GFX_WIDTH 850
+#define WINDOW_GFX_HEIGHT 750
 
 #define HEX_TEX_SIZE 128
 
-//#define WINDOW_GFX_WIDTH 1158 // for full setup
-//#define WINDOW_GFX_HEIGHT 600
-#define WINDOW_GFX_WIDTH 1056  // for temporary 50-glass setup
-#define WINDOW_GFX_HEIGHT 820
 
 HexArray field;
 

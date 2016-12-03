@@ -88,7 +88,10 @@ def read_image(name,buffer):
 	im.convert("RGB")
 	#im.show()
 
-	# dead-inefficient loop
+	# dead-inefficient loop.
+	# for each pixel in graphic, sind hex-row above and below, and hex-cell before and after.
+	# for these 4, calc distance and choose closest
+	# for this hex, add to a running average.
 	t = [(0,0,0,0)][:]*4096
 
 	cos30 = math.cos(30*math.pi/180.0)
@@ -97,7 +100,6 @@ def read_image(name,buffer):
 	print "HX_STEP = %.3f" % (HX_STEP,)
 	print "HX_ROWDIST = %.3f" % (HX_ROWDIST,)
 
-	dbg=list()
 	for y in xrange(H):
 		#print "y=%d" % y
 		py = float(y)
@@ -131,14 +133,11 @@ def read_image(name,buffer):
 				d2 = hx*hx + hy*hy
 				if d2<bd2:
 					bd2=d2;b=j
-			dbg.append(b)
 			hx,hy = po[b] # this is the hex-cell we map this pixel to.
 			if hx>=0 and hy>=0 and hx<2*64 and hy<2*64:
 				j = (hx>>1) + 64*(hy>>1)
 				tt = t[j]
 				t[j] = (tt[0]+1,tt[1]+p[0],tt[2]+p[1],tt[3]+p[2])
-
-	#print repr(t)[:2000]
 
 	for j in xrange(64):
 		for i in xrange(64):

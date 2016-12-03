@@ -18,23 +18,6 @@ DEFAULT_PORT = 8901
 
 def main(args):
 
-#	ml = HexBuff(6,6,0,0,0)
-#	for h in xrange(6):
-#		l = list()
-#		for w in xrange(6):
-#			x,y = ml.wh2xy(w,h)
-#			W,H = ml.xy2wh(x,y)
-#			l.append("%2d/%2d..%2d/%2d"%(x,y,W,H))
-#		print "   ".join(l)
-#
-#	print "------------"
-#	ls = list()
-#	for seq in xrange(LedClientBase.NUMLEDS):
-#		x,y = LedClientBase.seq_2_pos(seq)
-#		w,h = ml.xy2wh(x,y)
-#		ls.append((w,h))
-#	print " , ".join(("%d/%d"%(a,b)) for (a,b) in ls)
-
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("address",type=str,help="UDP address")
