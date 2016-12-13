@@ -82,6 +82,35 @@ class HexBuff(object):
 					th = xform[2]*oW + xform[3]*oH + self.oh + to_h
 					self.set_wh(tw,th,val)
 
+	@staticmethod
+	def transform(w,h,xform):
+		if xform is None:
+			return (w,h)
+		return ( xform[0]*w + xform[1]*h , xform[2]*w + xform[3]*h )
+
+	@staticmethod
+	def transform_list_of_tuples(ls,xform):
+		if xform is None:
+			return ls[:]
+		res = list()
+		for w,h in ls:
+			res.append(( xform[0]*w + xform[1]*h , xform[2]*w + xform[3]*h ))
+		return res
+
+	def __iter__(self):
+		return data.__iter__()
+
+
+
+# array to use as direction vectors
+dir_xy = ((2,0),(1,2),(-1,2),(-2,0),(-1,-2),(1,-2))
+#dir_wh = ()  # not hard-coding but using transform function to remain consistent.
+_dum = HexBuff(2,2)
+dir_wh = tuple(_dum.xy2wh(dx,dy) for dx,dy in dir_xy)
+del _dum
+#print repr(dir_xy)
+#print repr(dir_wh)
+
 
 def read_hex_file(name,colors_as_float=False):
 	f = file(name,"rb")

@@ -5,6 +5,7 @@
 
 import socket
 import sys
+import hex
 
 DEFAULT_PORT = 8901
 
@@ -43,6 +44,20 @@ def closedown():
 	global sock
 	sock.close()
 	sock = None
+
+def get_matching_HexBuff(defVal=0,border=0):
+	# simply scan seq2pos and find minimum match. No efficient, but consistent if the format changes.
+	res = hex.HexBuff(2,2) # dummy to get xy2wh function
+	W,H = 0,0
+	for xy in SEQ2POS.values():
+		w,h = res.xy2wh(xy&0xFFFF,xy>>16)
+		W = max(w,W)
+		H = max(h,H)
+	res = hex.HexBuff(W+1+2*border,H+1+2*border,border,border,None)
+	# fill in all valid spaces with the defVal
+	for xy in SEQ2POS.values():
+		res.set_xy(xy&0xFFFF,xy>>16,defVal)
+	return res
 
 """ convert a hsv value to a 3-tuple rgb. """
 def hsv2rgb_float(h,s,v):
@@ -96,12 +111,14 @@ def seq_2_pos(idx):
 
 """ get position of a LED, in int coords. """
 def seq_2_pos(idx):
+	global SEQ2POS
 	if idx not in SEQ2POS:
 		return None
 	cod = SEQ2POS[idx]
 	return (cod&0xFFFF) , (cod>>16)
 
 def pos_2_seq(x,y):
+	global POS2SEQ
 	cod = x + (y<<16)
 	if cod not in POS2SEQ:
 		return None
