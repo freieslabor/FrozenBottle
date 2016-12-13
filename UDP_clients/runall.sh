@@ -3,6 +3,8 @@
 # Run some programs for the FrozenBottle in an endless-loop.
 # list of programs is in the bash-array 'progs' in first line.
 
+STAYTIME=19
+
     # left out photo.py, as it uses PIL...
 declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py" "./spriteMove.py")
 
@@ -32,7 +34,7 @@ function runit {
   "$1" $2 &
   PID=$!
   echo pid = $PID
-  for i in `seq 1 10`; do
+  for i in `seq 1 $STAYTIME`; do
     sleep 1
     if kill -0 "$PID" >/dev/null 2>&1; then
       #echo TRUE $?

@@ -23,8 +23,9 @@ class brickdef(object):
 BRICK_BAR    = brickdef( ((-1,0),(0,0),(1,0)) , 1 )
 BRICK_CURV   = brickdef( ((-1,0),(0,0),(1,1)) , 2 )
 BRICK_DIAMOND= brickdef( ((-1,0),(0,0),(1,1),(0,1)) , 3 )
+BRICK_CROOK  = brickdef( ((-1,0),(0,0),(1,0),(0,1)) , 4 )
 
-all_brickdefs = (BRICK_BAR,BRICK_CURV,BRICK_DIAMOND)
+all_brickdefs = (BRICK_BAR,BRICK_CURV,BRICK_DIAMOND,BRICK_CROOK)
 
 colrgb = (
 	"\x00\x00\x00","\xE0\x00\x00","\x00\xE0\x00","\x00\x00\xE0",
@@ -134,7 +135,7 @@ class brick(object):
 
 
 class game(object):
-	__slots__ = ('field','brk','state','speed','delay','fulllines','score')
+	__slots__ = ('field','brk','state','speed','delay','fulllines','score','next_bdef')
 	# states: 0=normal, 1=flash lines, 2=gameover
 	def __init__(self,field):
 		if not isinstance(field,hex.HexBuff):
@@ -146,10 +147,14 @@ class game(object):
 		self.delay = 0
 		self.fulllines = None
 		self.score = 0
+		self.next_bdef = self.pickbrick()
 		for x in xrange(1,14,1):
 			self.field.set_wh(x,1,1)
 		for x in xrange(2,13,1):
 			self.field.set_wh(x,2,2)
+
+	def pickbrick(self):
+		return all_brickdefs[random.randint(0,len(all_brickdefs)-1)]
 
 	def step(self,userinput=None):
 		if (userinput is not None) and not isinstance(userinput,basestring):
@@ -169,8 +174,9 @@ class game(object):
 		# normal run.
 		if self.brk is None:
 			try:
-				self.brk = brick(self.field,all_brickdefs[random.randint(0,2)])
+				self.brk = brick(self.field,self.next_bdef)
 				self.brk.render(True)
+				self.next_bdef = self.pickbrick()
 				#print "added new brick"
 			except Exception,ex:
 				# cannot spawn new brick. game lost.
@@ -224,7 +230,10 @@ class game(object):
 
 	def step2(self,inp):
 		# game over
-		pass
+		if inp in (" ","\n","\r"):
+			self.delay=0
+			clearboard(self.field)
+			self.state=0
 
 	def step3(self,inp):
 		# doh?
@@ -276,7 +285,13 @@ def main(args):
 	for i in xrange(0x7FFF0000):
 
 		# do game.
-		gam.step(tio.getch())
+		c=None
+		while True:
+			cc = tio.getch()
+			if cc is None:
+				break
+			c=cc
+		gam.step(c)
 
 		# convert to color-LED-string
 		lin = list()
@@ -289,8 +304,9 @@ def main(args):
 
 		# build scoreline
 		_s = gam.score
-		_s = "".join(colrgb[15*((_s>>b)&1)] for b in xrange(13))
-		_s = mix_col_liness(_s,"".join(lin[-13:]))
+		_s = "".join(colrgb[15*((_s>>b)&1)] for b in xrange(12))
+		_s = colrgb[gam.next_bdef.colorindex] + _s
+		_s = mix_col_liness(_s,"".join(lin[-13:]),2,1)
 		del lin[-13:]
 		lin.append(_s)
 
@@ -341,27 +357,38 @@ def move_down_rest(field,fulllines):
 	for h in xrange(field.h):
 		from_h = maph[h]
 		if from_h<0:	# clear line
-			for w in xrange(field.h):
+			for w in xrange(field.w):
 				if field.get_wh(w,h) is not None:
 					field.set_wh(w,h,0)
 		elif from_h!=h:
 			# copy from [from_h]
-			for w in xrange(field.h):
+			for w in xrange(field.w):
 				if field.get_wh(w,h) is not None:
 					val = field.get_wh(w,from_h)
 					if val is None:
-						val=0
+						val=field.get_wh(w+1,from_h)
+						if val is None:
+							val = 0
 					field.set_wh(w,h,val)
 
-def mix_col_liness(lin1,lin2):
+def mix_col_liness(lin1,lin2,fac1,fac2):
 	if len(lin1)!=len(lin2) or (len(lin1)%3)!=0:
 		raise ValueError("need two strings of same length, multiple of 3")
+	if (not isinstance(fac1,int)) or (not isinstance(fac2,int)) or fac1<1 or fac2<1:
+		raise ValueError("bad factors. need integers, >=1. have "+repr((fac1,fac2)))
+	sm = fac1+fac2
 	res = list()
 	for i in xrange(len(lin1)/3):
 		p1=lin1[3*i:3*i+3]
 		p2=lin2[3*i:3*i+3]
-		res.append( chr(ord(p1[0])+ord(p2[0])>>1) + chr(ord(p1[1])+ord(p2[1])>>1) + chr(ord(p1[2])+ord(p2[2])>>1) )
+		res.append( chr((ord(p1[0])*fac1+ord(p2[0])*fac2)//sm) + chr((ord(p1[1])*fac1+ord(p2[1])*fac2)//sm) + chr((ord(p1[2])*fac1+ord(p2[2])*fac2)//sm) )
 	return "".join(res)
+
+def clearboard(field):
+	for h in xrange(field.h):
+		for w in xrange(field.w):
+			if field.get_wh(w,h) is not None:
+				field.set_wh(w,h,0)
 
 
 if __name__=="__main__":
