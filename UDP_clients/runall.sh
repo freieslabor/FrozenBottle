@@ -6,7 +6,7 @@
 STAYTIME=19
 
     # left out photo.py, as it uses PIL...
-declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py" "./spriteMove.py")
+declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py" "./spriteMove.py" "./maze.py")
 
 if [ -z "$1" ]; then
   echo "missing argument for target address" >&2
