@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 
 # Not yet a scroll-text. But a base with a class for representing, blitting and rotating hex-patterns.
 
@@ -12,9 +12,6 @@ import LedClientBase
 import hex
 
 DEFAULT_PORT = 8901
-
-
-
 
 def main(args):
 
@@ -39,46 +36,22 @@ def main(args):
 		address = aa.address
 
 	LedClientBase.connect(address,port)
-
+	
 	mainbuff = hex.HexBuff(20,14,0,0,(0.0,0.0,0.0))
 	mainbuff.fill_val((0.2,0.2,0.2))
-
-	over1 = hex.HexBuff(7,3,3,1)
-	over1.fill_val((0.9,0.3,0.2))
-	over1.set_wh(3,1,(0.9,0.9,0.9))
-	over1.set_wh(1,0,(0.3,0.9,0.4))
-	over1.set_wh(0,0,(0.3,0.9,0.4))
-	over1.set_wh(0,1,(0.3,0.9,0.4))
-	over1.set_wh(0,2,(0.3,0.9,0.4))
-	over1.set_wh(6,0,None)
-	over1.set_wh(5,0,None)
-	over1.set_wh(6,1,None)
-	rotpos = list()
-	rotpos.append(hex.HexBuff.XFORM_UNITY)
-	rotpos.append(hex.HexBuff.XFORM_ROT60)
-	rotpos.append(hex.HexBuff.XFORM_ROT120)
-	rotpos.append(hex.HexBuff.XFORM_ROT180)
-	rotpos.append(hex.HexBuff.XFORM_ROT240)
-	rotpos.append(hex.HexBuff.XFORM_ROT300)
-	rotpos.append(hex.HexBuff.XFORM_UNITY)
-	rotpos.append(hex.HexBuff.XFORM_FLIP_X)
-	rotpos.append(hex.HexBuff.XFORM_UNITY)
-	rotpos.append(hex.HexBuff.XFORM_FLIP_Y)
-
-	over2 = read_hex_file(os.path.join("data","sample.hex"))
+		
+	l = list()
+	for i in range(10):
+		l.append(read_hex_file(os.path.join("data","erlenmeier"+str(i)+".hex")))
 
 	t = 0.0
 	lr = -1
-
 	for i in xrange(0x7FFF0000):
 
 		# play
-		nr = int(t*2.5)%len(rotpos)
-		mainbuff.fill_val((0.2,0.2,0.2))
-		mainbuff.blit(over1,9,4,rotpos[nr])
-		mainbuff.blit(over2,10,(i%20)-7,None)
-
-
+		mainbuff.fill_val((0.0,0.0,0.0))
+		ii = (i%10)
+		mainbuff.blit(l[ii],0,0,None)
 
 		# now prepare and send
 		lin = list()

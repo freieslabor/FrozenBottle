@@ -1,0 +1,13 @@
+HEX sample
+
+COLORS
+B 255,255,255
+
+DATA
+ . B B B B B .
+. . B B . . . .
+ . B B . . . .
+. . B B B B . .
+ . B B . . . . 
+. . B B . . . .
+ . B B B B B . 

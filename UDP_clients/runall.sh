@@ -4,7 +4,7 @@
 # list of programs is in the bash-array 'progs' in first line.
 
     # left out photo.py, as it uses PIL...
-declare -a progs=("./colorFlow.py" "./blue.py" "./colorWheel.py" "./snake.py" "./spriteMove.py")
+declare -a progs=("./colorFlow.py" "./colorWheel.py" "./snake.py")
 
 if [ -z "$1" ]; then
   echo "missing argument for target address" >&2
