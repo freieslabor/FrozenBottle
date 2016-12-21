@@ -10,7 +10,7 @@ class HexBuff(object):
 		w/h is a pair addressing the 2D array plain just like a 2D array.
 		x/y is a pair transformed to a flat screen showing the hex-array. step-width is 2.
 	"""
-	__slots__ = ("data","w","h","ow","oh")
+	__slots__ = ("data","w","h","ow","oh","defval")
 
 	# some transforms. scribed X-forms are in XY (physical) plane,
 	# matrix is to be applied to w,h pair. Pass these to blit()
@@ -29,6 +29,7 @@ class HexBuff(object):
 		self.ow = origin_w
 		self.oh = origin_h
 		self.data = list()
+		self.defval = default_value
 		dum = list()
 		for i in xrange(w):
 			dum.append(default_value)
@@ -48,7 +49,7 @@ class HexBuff(object):
 
 	def get_wh(self,w,h):
 		if w<0 or w>=self.w or h<0 or h>=self.h:
-			return 0
+			return self.defval
 		return self.data[h][w]
 
         def get_w(self):
@@ -105,6 +106,12 @@ class HexBuff(object):
 
 	def __iter__(self):
 		return data.__iter__()
+
+	def dbg_prnt(self,func_value2char):
+		for h in xrange(self.h-1,-1,-1):
+			ln = ' '.join(func_value2char(val) for val in self.data[h])
+			ln = (" "*(self.h-1-h))+ln
+			print ln
 
 
 

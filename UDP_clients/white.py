@@ -10,7 +10,7 @@ import LedClientBase
 
 DEFAULT_PORT = 8901
 
-
+BRIGHT=0.5
 
 def main(args):
 
@@ -42,7 +42,7 @@ def main(args):
 		lin = list()
 		for j in xrange(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
-			rgb_tuple = (1.0,1.0,1.0)
+			rgb_tuple = (BRIGHT,BRIGHT,BRIGHT)
 			if (i%10)==2:
 				rgb_tuple = (0.1,0.1,0.1)
 			if (i%LedClientBase.NUMLEDS)==j:
@@ -51,8 +51,8 @@ def main(args):
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
 		LedClientBase.send("".join(lin))
 
-		time.sleep(0.017)
-		t += 0.017
+		time.sleep(0.10)
+		t += 0.10
 
 	LedClientBase.closedown()
 
