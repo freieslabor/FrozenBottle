@@ -43,16 +43,16 @@ def main(args):
 		
 	l = list()
 	for i in range(len(args.text)):
-            if args.text[i] == '.':
-		l.append(read_hex_file(os.path.join("data","dot.hex")))
+            if (args.text[i] == "/"):
+	        l.append(read_hex_file(os.path.join("data","slash.hex")))
             else:
-		l.append(read_hex_file(os.path.join("data",args.text[i]+".hex")))
+	        l.append(read_hex_file(os.path.join("data",args.text[i]+".hex")))
 
 	t = 0.0
 	lr = -1
         length = 13
         for i in range(len(l)):
-            length += l[i].get_w()
+            length += 7
 	for i in xrange(0x7FFF0000):
 
 		# play
@@ -61,7 +61,7 @@ def main(args):
                 distance = 13
                 for j in range(len(l)):
                     mainbuff.blit(l[j],distance - ii,4,None)
-                    distance += l[j].get_w()
+                    distance += 7
 
 		# now prepare and send
 		lin = list()
@@ -72,7 +72,7 @@ def main(args):
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
 		LedClientBase.send("".join(lin))
 
-		time.sleep(0.100)
+		time.sleep(0.03)
 		t += 0.100
 
 	LedClientBase.closedown()
