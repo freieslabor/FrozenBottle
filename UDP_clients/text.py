@@ -50,14 +50,25 @@ def main(args):
 
 	t = 0.0
 	lr = -1
-        length = 13
-        for i in range(len(l)):
-            length += 7
+        length = 13 + len(l)*7
+        r = 0.5
+        g = 0
+        b = 0
 	for i in xrange(0x7FFF0000):
 
 		# play
-		mainbuff.fill_val((0.0,0.0,0.0))
 		ii = (i%length)
+                if ( ii == 0):
+                    if (r == 0.5):
+                        g = 0.5
+                        r = 0
+                    elif (g == 0.5):
+                        b = 0.5
+                        g = 0
+                    elif (b == 0.5):
+                        r = 0.5
+                        b = 0
+		mainbuff.fill_val((r,g,b))
                 distance = 13
                 for j in range(len(l)):
                     mainbuff.blit(l[j],distance - ii,4,None)
