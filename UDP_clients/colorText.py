@@ -19,6 +19,7 @@ def main(args):
 	parser.add_argument("address",type=str,help="UDP address")
         parser.add_argument("text",type=str,help="Text")
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
+	parser.add_argument("-r","--revert",default=False,action="store_true")
 	aa = parser.parse_args()
 
 	print repr(aa)
@@ -57,7 +58,10 @@ def main(args):
 	        distance = 13
 		mainbuff.fill_val((0,0,0.01))
                 for j in range(len(l)):
-                    mainbuff.blit(l[j],distance - ii,4,hex.HexBuff.XFORM_FLIP_X)
+                    if (aa.revert):
+                        mainbuff.blit(l[j],distance - ii,4,hex.HexBuff.XFORM_FLIP_X)
+                    else:
+                        mainbuff.blit(l[j],distance - ii,4,None)
                     distance += 7
 
 
