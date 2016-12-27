@@ -45,6 +45,8 @@ def main(args):
         for i in range(len(aa.text)):
             if (aa.text[i] == "/"):
                 l.append(read_hex_file(os.path.join("data","slash.hex")))
+            elif(aa,text[i] == "."):
+                l.append(read_hex_file(os.path.join("data","dot.hex")))
             else:
                 l.append(read_hex_file(os.path.join("data",aa.text[i]+".hex")))
 
