@@ -19,6 +19,7 @@ def main(args):
 	parser.add_argument("address",type=str,help="UDP address")
         parser.add_argument("text",type=str,help="Text")
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
+	parser.add_argument("-r","--revert",default=False,action="store_true")
 	aa = parser.parse_args()
 
 	print repr(aa)
@@ -44,6 +45,8 @@ def main(args):
         for i in range(len(aa.text)):
             if (aa.text[i] == "/"):
                 l.append(read_hex_file(os.path.join("data","slash.hex")))
+            elif(aa.text[i] == "."):
+                l.append(read_hex_file(os.path.join("data","dot.hex")))
             else:
                 l.append(read_hex_file(os.path.join("data",aa.text[i]+".hex")))
 
@@ -57,7 +60,10 @@ def main(args):
 	        distance = 13
 		mainbuff.fill_val((0,0,0.01))
                 for j in range(len(l)):
-                    mainbuff.blit(l[j],distance - ii,4,hex.HexBuff.XFORM_FLIP_X)
+                    if (aa.revert):
+                        mainbuff.blit(l[j],distance - ii,4,hex.HexBuff.XFORM_FLIP_X)
+                    else:
+                        mainbuff.blit(l[j],distance - ii,4,None)
                     distance += 7
 
 
