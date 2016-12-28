@@ -47,15 +47,17 @@ def main(args):
 		lin = list()
 		for j in xrange(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
-			val1 = math.sin(xx * 10 + t) + 1
-			val2 = math.sin((xx * math.sin(t/2) + yy * math.cos(t/3))+t) + 1
-			cx = xx + 0.5 * math.sin(t/5)
-			cy = yy + 0.5 * math.cos(t/3)
-			val3 = math.sin(math.sqrt(100 * (math.pow(cx,2) + math.pow(cy,2))+1+t)) + 1
-			val = (val1 + val2 + val3) / 6
-			vr = math.sin(val * math.pi + 2 * math.pi / 3 + t) + 1
-			vg = math.sin(val * math.pi + 4 * math.pi / 3 + t) + 1
-			vb = math.sin(val * math.pi + t) + 1
+			vx = xx * 2 * math.pi / 18
+			vy = yy * 2 * math.pi / 18
+			val1 = math.sin(vx + t) + 1
+			val2 = math.sin((vx * math.sin(t/2) + vy * math.cos(t/3))+t) + 1
+			cx = vx + 0.5 * math.sin(t/5)
+			cy = vy + 0.5 * math.cos(t/3)
+			val3 = math.sin(math.sqrt( (math.pow(cx,2) + math.pow(cy,2))+1+t)) + 1
+			val = (val1 + val2 + val3 ) / 3
+			vg = (math.sin(val * math.pi + 4 * math.pi / 3) + 1 ) / 2
+			vb = (math.sin(val * math.pi + 2 * math.pi / 3) + 1 ) / 2
+			vr = (math.sin(val * math.pi) + 1 ) / 2
 			rgb_tuple = (vr, vg, vb)
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
 		# send to strip
