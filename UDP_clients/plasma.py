@@ -64,7 +64,7 @@ def main(args):
 		LedClientBase.send("".join(lin))
 
 		time.sleep(0.100)
-		t += 0.100
+		t += 0.500
 
 	LedClientBase.closedown()
 
