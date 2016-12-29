@@ -8,6 +8,7 @@
 import socket
 import sys
 import serial
+from datetime import datetime, timedelta
 
 
 UDPport = 8901
@@ -40,9 +41,17 @@ LEDmap = (
            "aaaaaaaaaaaaaa" +
            "aaaaaaaaaaaaa")
 
+# slot length in seconds
+SLOT_LENGTH = 30
 
+# send data timeout in seconds
+DATA_TIMEOUT = 2
 
+# list of (address, timeslot_end_time, timeout_time) tuples
+CLIENTS = []
 
+# list of IPs that are always allowed sending
+IP_WHITELIST = ["127.0.0.2"]
 
 
 if len(LEDmap) < 1024:
@@ -80,6 +89,63 @@ def main(args):
         sock.close()
 
     return 0
+
+
+def multi_client(data, address):
+    """
+    As receiving data from multiple clients at the same time does not make
+    sense this method makes sure only one client can send data. Client
+    management is done with timeslots. Each client requests a timeslot by
+    sending data. If the timeslot has ended the next client is granted a slot.
+    """
+
+    global CLIENTS, IP_WHITELIST, SLOT_LENGTH, DATA_TIMEOUT
+
+    if len(CLIENTS) > 0:
+        # cleanup expired timeslot and client not sending data
+        client_addr, end_time, last_data_time = CLIENTS[0]
+        end_time_exceeded = end_time and datetime.now() > end_time
+        timeout = last_data_time and \
+            datetime.now() > last_data_time + timedelta(seconds=DATA_TIMEOUT)
+
+        if end_time_exceeded or timeout:
+            print("Cleaning {} (exceeded: {}; timeout: {})"
+                  .format(client_addr, end_time_exceeded, timeout))
+            del CLIENTS[0]
+
+    # check if client is new
+    found = False
+
+    for client in CLIENTS:
+        client_addr, end_time, last_data_time = client
+        if client_addr == address:
+            found = True
+
+    if not found:
+        # whitelisted clients get priority
+        if address in IP_WHITELIST:
+            priority_length = datetime.now() + timedelta(hours=24)
+            CLIENTS.insert(0, (address, priority_length, None))
+            print("New priority client {} connected".format(address))
+        else:
+            CLIENTS.append((address, None, None))
+        print("New client {} connected".format(address))
+
+    # client address is at 1st position in queue
+    client_addr, end_time, last_data_time = CLIENTS[0]
+    if client_addr == address:
+        # first data received from client
+        if end_time is None:
+            end_time = datetime.now() + timedelta(seconds=SLOT_LENGTH)
+        CLIENTS[0] = (client_addr, end_time, datetime.now())
+
+        print("{} is sending data".format(address))
+        proc_input(data)
+    else:
+        client = list(filter(lambda c: c[0] == address, CLIENTS))[0]
+        position = CLIENTS.index(client)
+        print("{} tried to send data, but is queued (position {})"
+              .format(address, position))
 
 
 # Eine Zeile Input verarbeiten: Auf 5-bit kuerzen, RGB Komponenten umordnen,
