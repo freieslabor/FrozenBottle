@@ -129,7 +129,7 @@ def multi_client(data, address):
             print("New priority client {} connected".format(address))
         else:
             CLIENTS.append((address, None, None))
-        print("New client {} connected".format(address))
+            print("New client {} connected".format(address))
 
     # client address is at 1st position in queue
     client_addr, end_time, last_data_time = CLIENTS[0]
