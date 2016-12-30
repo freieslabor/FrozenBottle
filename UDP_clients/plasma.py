@@ -54,7 +54,7 @@ def main(args):
 			cx = vx + 0.5 * math.sin(t/5)
 			cy = vy + 0.5 * math.cos(t/3)
 			val3 = math.sin(math.sqrt( (math.pow(cx,2) + math.pow(cy,2))+1+t)) + 1
-			val = (val1 + val2 + val3 ) / 3
+			val = (val1 + val2 + val3) / 3
 			vg = (math.sin(val * math.pi + 4 * math.pi / 3) + 1 ) / 2
 			vb = (math.sin(val * math.pi + 2 * math.pi / 3) + 1 ) / 2
 			vr = (math.sin(val * math.pi) + 1 ) / 2
@@ -64,7 +64,7 @@ def main(args):
 		LedClientBase.send("".join(lin))
 
 		time.sleep(0.100)
-		t += 0.500
+		t += 0.250
 
 	LedClientBase.closedown()
 
