@@ -73,7 +73,7 @@ def main(args):
 			rgb_tuple = mainbuff.get_xy(xx,yy)
 			if (rgb_tuple == (1,1,1)):
 				rgb_tuple = (0,0,0)
-			if (rgb_tuple == (0,0,0.01)):			
+			if (rgb_tuple == (0,0,0.01)):
 				rgb_tuple = color_calc_func_1(i,j,xx,yy)
 
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
