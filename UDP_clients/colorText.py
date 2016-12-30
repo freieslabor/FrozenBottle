@@ -20,6 +20,7 @@ def main(args):
     parser.add_argument("text", type=str, help="Text")
     parser.add_argument("-p", "--port", type=int, help="UDP port number")
     parser.add_argument("-r", "--revert", default=False, action="store_true")
+    parser.add_argument("-d", "--dynamic", default=False, action="store_true")
     aa = parser.parse_args()
 
     print repr(aa)
@@ -58,10 +59,15 @@ def main(args):
         distance = 13
         mainbuff.fill_val((0, 0, 0.01))
         for j in range(len(l)):
-            if (aa.revert):
-                mainbuff.blit(l[j], distance - ii, 4, hex.HexBuff.XFORM_FLIP_X)
+            f = 0.96
+            if (aa.dynamic):
+                y = 4 * math.sin(2 * math.pi * f * (distance - ii) + t) + 4
             else:
-                mainbuff.blit(l[j], distance - ii, 4, None)
+                y = 4
+            if (aa.revert):
+                mainbuff.blit(l[j], distance - ii, int(y), hex.HexBuff.XFORM_FLIP_X)
+            else:
+                mainbuff.blit(l[j], distance - ii, int(y), None)
             distance += 7
 
         lin = list()
@@ -76,8 +82,8 @@ def main(args):
             lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
         LedClientBase.send("".join(lin))
 
-        time.sleep(0.03)
-        t += 0.03
+        time.sleep(0.06)
+        t += 0.1
 
     LedClientBase.closedown()
 
