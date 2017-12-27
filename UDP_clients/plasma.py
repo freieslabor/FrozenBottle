@@ -63,8 +63,8 @@ def main(args):
 		# send to strip
 		LedClientBase.send("".join(lin))
 
-		time.sleep(0.100)
-		t += 0.250
+		time.sleep(0.01)
+		t += 0.050
 
 	LedClientBase.closedown()
 
