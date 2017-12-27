@@ -4,6 +4,7 @@ IP="151.217.115.43"
 PORT=""
 DURATION=15.0
 
+animNumb=6
 
 declare -a arr=(
 #"blue.py"
@@ -12,11 +13,11 @@ declare -a arr=(
 "colorWheel.py"
 ## kaputt "erlenmeyer.py"
 #"game_of_hive.py"
-"gif_scroll.py"
+#"gif_scroll.py"
 #"hex.py"
 "maze.py"
-"mrburns.py"
-"photo.py"
+#"mrburns.py"
+#"photo.py"
 "plasma.py"
 "snake.py"
 "snow_tetris.py"
@@ -38,8 +39,26 @@ trap exit_script SIGINT SIGTERM
 while true
 do
 
+declare -a finarr=()
+lastrand=1000
+
+
+#Includes Random
+for i in $animNumb
+do
+
+    rand=$RANDOM%$animNumb
+    if $rand!=$lastrand
+    then
+        rand=$rand+$rand%[$animNumb-1]+1
+    fi
+    finarr+=${arr[$rand]}
+    
+done
+    
+
 ## now loop through the above array
-for i in "${arr[@]}"
+for i in "${finarr[@]}"
 do
 	echo "$i"
 	"./${i}" "${IP}" &
