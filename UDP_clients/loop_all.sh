@@ -4,9 +4,10 @@ IP="151.217.115.43"
 PORT=""
 DURATION=15.0
 
-animNumb=6
+animNumb=7
 
 declare -a arr=(
+"2dmaze.py"
 #"blue.py"
 "colorFlow.py"
 # braucht arguzment "colorText.py"

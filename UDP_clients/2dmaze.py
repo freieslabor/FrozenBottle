@@ -2,7 +2,6 @@
 
 import argparse
 import math
-import six
 import sys
 import time
 import LedClientBase
@@ -12,6 +11,14 @@ DEFAULT_PORT = 8901
 TIMESTEP = 0.01
 
 PRIMITIVEWALK_STEP_SIZE = 0.005
+
+# for some reason, the six compat-module did not run properly on BBB.
+try:
+	xrange(1)
+except NameError:
+	xrange = range
+
+
 
 
 def main(args):
@@ -57,7 +64,7 @@ def main(args):
 
 		# convert to FrozenBottle LED sequence
 		seq = list()
-		for i in six.moves.range(LedClientBase.NUMLEDS):
+		for i in xrange(LedClientBase.NUMLEDS):
 			x,y = LedClientBase.seq_2_pos(i)
 			if x>=0 and y>=0 and x<v.resX and y<v.resY:
 				col = v.gfxmatrix[x+v.resX*y]
@@ -75,6 +82,7 @@ def main(args):
 	LedClientBase.closedown()
 
 	return 0
+
 
 
 
@@ -182,11 +190,11 @@ class Viewer(object):
 			y1 = min(self.resY,y1)
 
 			# fill in
-			for y in six.moves.range(0,y0):
+			for y in xrange(0,y0):
 				self.gfxmatrix[x+self.resX*y] = 0
-			for y in six.moves.range(y0,y1):
+			for y in xrange(y0,y1):
 				self.gfxmatrix[x+self.resX*y] = col
-			for y in six.moves.range(y1,self.resY):
+			for y in xrange(y1,self.resY):
 				self.gfxmatrix[x+self.resX*y] = 0
 
 			x+=1
@@ -206,7 +214,7 @@ class Viewer(object):
 		# with of  orthogonal sampling edge
 		wdd = math.sqrt( (math.cos(self.fow)-1.0)**2 + (math.sin(self.fow))**2 )
 		#print("DEBUG: wdd = %f"%wdd)
-		for i in six.moves.range(self.resX):
+		for i in xrange(self.resX):
 			q = i/float(self.resX-1) - 0.5  # -1 .. 1
 			q = -q ## lieber von links nach rechts.
 			# sample view
@@ -218,7 +226,7 @@ class Viewer(object):
 				walldir = wall.walldir
 				if side:
 					walldir += math.pi
-				r,g,b = LedClientBase.hsv2rgb_float( walldir/(2.0*math.pi) , 0.8 , 1.0 )
+				r,g,b = LedClientBase.hsv2rgb_float( walldir/(2.0*math.pi) , 0.8 , 1.0/max(1.0,math.pow(dist,1.0)) )
 				color = int(r*255.0+0.5) + int(g*255.0+0.5)*0x0100 + int(b*255.0+0.5)*0x010000
 			else:
 				# looking into the void.
