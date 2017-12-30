@@ -1,0 +1,2 @@
+# ignore 'pasm' which is built from source.
+pasm

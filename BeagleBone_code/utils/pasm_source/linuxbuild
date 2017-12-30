@@ -1,0 +1,8 @@
+#!/bin/sh
+gcc -O3 -Wall -D_UNIX_ pasm.c pasmpp.c pasmexp.c pasmop.c pasmdot.c pasmstruct.c pasmmacro.c path_utils.c -o ../pasm
+
+if [ $? -eq 0 ]
+then
+  strip ../pasm
+fi
+

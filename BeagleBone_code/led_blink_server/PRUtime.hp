@@ -1,0 +1,119 @@
+// Functions to use the PRU timer.
+//
+// assumptions:
+// r22: buffer-reg for timer.
+// r23: stack-pointer, decrementing, points to last valid. written with *(--ptr) .
+// r24: JAL register.
+// functions do not store/restore r0..r3.
+
+
+
+// delay a number of cycles.
+// R0 is count. Includes cycle to jump in and out.
+// smallest is 7 cycles.
+	sub r0,r0,#3
+delay:
+	qbbs _delay__jumptab+9,r0,#31 // too late. exit.
+	qble delay-1,r0,#10  // if more than 10 left, sub and loop.
+	// largest possible value here for r0 is 9.
+	ldi r0.w2,#(_delay__jumptab+9)
+	rsb r0,r0.w0,r0.w2
+	jmp r0
+  _delay__jumptab:
+	ldi r0,#2
+	ldi r0,#1
+	jmp r24
+	jmp r24
+	jmp r24
+	jmp r24
+	jmp r24
+	jmp r24
+	jmp r24
+	jmp r24
+	jmp r24
+
+
+// start the PRU0 timer.
+PRU0_timer_init:
+	ldi r1.w2,#0x0002
+	ldi r1.w0,#0x2000
+	ldi r0, #0
+	sbbo r0, r1, #0x0C, #4
+	lbbo r0, r1, #0, #4
+	set r0, #3
+	sbbo r0, r1, #0, #4
+	ldi r22, #0
+	jmp r24
+
+// poll the timer, and reset it (crappy non-wrapping timer). Returns value like timer_read.
+// takes 15 cycles (incl jmp in,out)
+PRU0_timer_read_reset:
+	ldi r2.w2,#0x0002
+	ldi r2.w0,#0x2000
+	ldi r1, #0
+	lbbo r0, r2, #0x0C, #4
+	sbbo r1, r2, #0x0C, #4
+	add r22, r22, r0
+	add r22, r22, #5  // compensate time the cycles advanced between read and clear.
+	add r0, r22, #0  // adjust as if just called the ctr_read
+	jmp r24
+
+// poll the timer
+// takes 9 cycles (incl jmp in,out)
+PRU0_timer_read:
+	ldi r0.w2,#0x0002
+	ldi r0.w0,#0x2000
+	lbbo r0, r0, #0x0C, #4
+	add r0, r0, r22
+	jmp r24
+
+// Wait until timer has reached a value passed in r0.
+// Minimum time is 16 (incl jmp in,out)
+PRU0_timer_wait_until:
+	ldi r1.w2,#0x0002
+	ldi r1.w0,#0x2000
+	lbbo r1, r1, #0x0C, #4
+	add r1, r1, r22
+	sub r0, r0, r1
+	sub r0, r0, #1
+	jmp delay
+
+
+PRU1_timer_init:
+	ldi r1.w2,#0x0002
+	ldi r1.w0,#0x4000
+	ldi r0, #0
+	sbbo r0, r1, #0x0C, #4
+	lbbo r0, r1, #0, #4
+	set r0, #3
+	sbbo r0, r1, #0, #4
+	ldi r22, #0
+	jmp r24
+
+PRU1_timer_read_reset:
+	ldi r2.w2,#0x0002
+	ldi r2.w0,#0x4000
+	ldi r1, #0
+	lbbo r0, r2, #0x0C, #4
+	sbbo r1, r2, #0x0C, #4
+	add r22, r22, r0
+	add r22, r22, #5  // compensate time the cycles advanced between read and clear.
+	add r0, r22, #0  // adjust as if just called the ctr_read
+	jmp r24
+
+PRU1_timer_read:
+	ldi r0.w2,#0x0002
+	ldi r0.w0,#0x4000
+	lbbo r0, r0, #0x0C, #4
+	add r0, r0, r22
+	jmp r24
+
+PRU1_timer_wait_until:
+	ldi r1.w2,#0x0002
+	ldi r1.w0,#0x4000
+	lbbo r1, r1, #0x0C, #4
+	add r1, r1, r22
+	sub r0, r0, r1
+	sub r0, r0, #1
+	jmp delay
+

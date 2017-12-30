@@ -1,0 +1,20 @@
+Github project with userspace 'driver':
+    https://github.com/beagleboard/am335x_pru_package
+
+
+
+???
+
+TI getting-started-guide:
+    http://processors.wiki.ti.com/index.php/PRU-ICSS_Getting_Started_Guide
+
+
+Mem-map in PRU:
+   Instruction (hardvard, own range) 0 .. 0x02000
+data
+  00000000 - 00002000  data ram this PRU
+  00002000 - 00004000  data ram other PRU
+
+
+
+
