@@ -5,8 +5,8 @@ all: led led0.bin led1.bin
 clean:
 	rm led led0.bin led1.bin
 
-led: led_main.c ../ti_pru_code/prussdrv.c ../ti_pru_code/prussdrv.h ../ti_pru_code/pruss_intc_mapping.h
-	gcc -o led -Wall -I. -ggdb -O0 led_main.c ../ti_pru_code/prussdrv.c
+led: led_main.c ./prussdrv.c ./prussdrv.h ./pruss_intc_mapping.h
+	gcc -o led -Wall -I. -ggdb -O0 led_main.c ./prussdrv.c
 
 
 # Assemble the PRU code

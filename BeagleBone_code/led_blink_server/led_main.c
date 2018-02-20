@@ -47,7 +47,24 @@ static void limit_power(unsigned char *vals,unsigned int num_leds,unsigned char 
 static char readInt(const char *arg,int *out_value,int _min,int _max);
 
 
-const char _led_tp[] = "a";
+const char _led_tp[] = \
+           "aaaaaababbaaaa" \
+           "aabaababaaaaa" \
+           "aabaaaabbaaaaa" \
+           "aaaaaabaabbaa" \
+           "bbbbabbabaaaaa" \
+           "ababaaaababaa" \
+           "babbbabaabbbaa" \
+           "abbaaabbbbbab" \
+           "baabaabaababaa" \
+           "aabaabaababaa" \
+           "aabaaaaaaaaaaa" \
+           "abbbbaabaabbb" \
+           "aabbbaaababbba" \
+           "abbbaaabbbaaa" \
+           "aaaaaaaaaaaaaa" \
+           "aaaaaaaaaaaaa" ;
+
 
 
 typedef struct
