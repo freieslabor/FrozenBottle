@@ -13,10 +13,13 @@
 *
 ******************************************************************************/
 
+#include <malloc.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <time.h>
 #include <unistd.h>
+#include "read_text.h"
 
 // headers for network and UDP
 #include <arpa/inet.h>
@@ -27,9 +30,9 @@
 #define PRU_MEM_LEDS_START 0x0800
 #define PRU_MEM_LEDS_END 0x1E00
 
-#define LEDS_NUM (16*60)  // number of leds for idle-play
+#define LEDS_NUM (7*(13+14))  // number of leds for idle-play
 #define IDLE_BRIGHTNESS 32  // bright-value (PWM, not pre-gamma) for idle-loop.
-#define LIMIT_AVG_BRIGHT 48
+#define LIMIT_AVG_BRIGHT 255 // 48
 
 // PRU driver header file
 #include <prussdrv.h>
@@ -45,8 +48,15 @@ static void adjust_timeout(char to_lng);
 static void correct_values(unsigned char *buffer,unsigned int bytes);
 static void limit_power(unsigned char *vals,unsigned int num_leds,unsigned char avg_max_pwm);
 static char readInt(const char *arg,int *out_value,int _min,int _max);
+static int process_command_packet(const char *cmd);
+static int process_command_packet_gamma(const char *cmd);
 
 
+#define MAX_PACK_SIZE 10240
+#define COMMAND_PCK_PREFIX "COMMAND_2_SERVER"   // 16 byte prefix string. keep length at 16.
+
+
+// mapping table for flipping blue- and green parts.
 const char _led_tp[] = \
            "aaaaaababbaaaa" \
            "aabaababaaaaa" \
@@ -65,6 +75,25 @@ const char _led_tp[] = \
            "aaaaaaaaaaaaaa" \
            "aaaaaaaaaaaaa" ;
 
+
+// mapping table for the four chroma variants the LEDs have.
+// strangely enough, this does not correlate with the tp map.
+const char _led_che[] = \
+		"gwgwwwbwlbwglw" \
+		"lwblglgllgggw" \
+		"glllgglbbgwgwg" \
+		"wwwllgblglblw" \
+		"blllwlbgllwlww" \
+		"llllwlglbwbll" \
+		"bllllgblwllbll" \
+		"llllglblbllll" \
+		"lwglwllwgbwlll" \
+		"lwlgwlwgbwlll" \
+		"lwlgwgwwggwglw" \
+		"llllllwllglbl" \
+		"wllbbggglllllg" \
+		"gbbbgglbbllgg" \
+		;
 
 
 typedef struct
@@ -110,7 +139,11 @@ static const unsigned char gamma[] = {
 	0xE3,0xE4,0xE6,0xE8,0xEA,0xEC,0xEE,0xF0,0xF2,0xF3,0xF5,0xF7,0xF9,0xFB,0xFD,0xFF
 };
 
+unsigned char gamma4[4][256];	// gamma curves for the different variants
+
 static unsigned char LEDSbuf[3*LEDS_NUM];
+
+static unsigned char chr_2_gammano(char sym);
 
 int main(int numargs,const char *const* args)
 {
@@ -124,7 +157,14 @@ int main(int numargs,const char *const* args)
   unsigned int size;
   const char *errtxt=0;
 
+	// DEBUG
+//	process_command_packet("GAMMA w 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255");
+
 	memset( &self , 0 , sizeof(self) );
+	memcpy( gamma4[0] , gamma , 256 );
+	memcpy( gamma4[1] , gamma , 256 );
+	memcpy( gamma4[2] , gamma , 256 );
+	memcpy( gamma4[3] , gamma , 256 );
 	self.udp_sock = -1;
 	self.timeout_long = 33; // dummy. not 1, not 0
 
@@ -268,16 +308,16 @@ int main(int numargs,const char *const* args)
 	{
 	  int ln;
 	  socklen_t adrlen;
-	  unsigned char pckbuf[10240];
+	  unsigned char pckbuf[MAX_PACK_SIZE+4];
 	  struct sockaddr_in6 srcadr;
 
 
 		memset( &srcadr , 0 , sizeof(srcadr) );
 		adrlen = sizeof(srcadr);
-		ln = recvfrom( self.udp_sock , pckbuf , sizeof(pckbuf) , MSG_TRUNC , (struct sockaddr*)&srcadr , &adrlen );
+		ln = recvfrom( self.udp_sock , pckbuf , MAX_PACK_SIZE , MSG_TRUNC , (struct sockaddr*)&srcadr , &adrlen );
 		if( ln==EAGAIN || ln==EWOULDBLOCK || ln==-1 )
 		{
-			// generate something here.
+			// no data. generate idle-animation here.
 		  int i;
 			memset( LEDSbuf , IDLE_BRIGHTNESS , 3*LEDS_NUM );
 
@@ -291,8 +331,14 @@ int main(int numargs,const char *const* args)
 			correct_values(LEDSbuf,LEDS_NUM);
 
 			adjust_timeout(0);
+		}else if( ln>=16 && !memcmp(pckbuf,COMMAND_PCK_PREFIX,16) )
+		{
+			// command-packet
+			pckbuf[ln] = 0;	// null-terminate string.
+			process_command_packet((const char*)pckbuf+16);
 		}else if(ln>=5)
 		{
+			// is a packet of color-information
 			if( ln > (3*LEDS_NUM) )
 				ln = (3*LEDS_NUM);
 			ln /= 3;
@@ -354,6 +400,18 @@ leave:
 
 	return (errtxt?5:0);
 }
+
+static unsigned char chr_2_gammano(char sym)
+{
+	switch(sym)
+	{
+	case 'w': return 1;
+	case 'g': return 2;
+	case 'b': return 3;
+	default: return 0;
+	}
+}
+
 
 
 
@@ -447,15 +505,29 @@ static void adjust_timeout(char to_lng)
 static void correct_values(unsigned char *buffer,unsigned int numleds)
 {
   unsigned int i;
+  char sym;
+// DEBUG
+  time_t tm;
+	tm = time(0);
+// end DEBUG
 	for(i=0;i<numleds;i++)
 	{
 		unsigned char r,g,b;
 		r=buffer[0];
 		g=buffer[1];
 		b=buffer[2];
-		r = gamma[r];
-		g = gamma[g];
-		b = gamma[b];
+		sym = 'w';
+		if( i<sizeof(_led_che) )sym = _led_che[i];
+		sym = chr_2_gammano(sym);
+		r = gamma4[(unsigned char)sym][r];
+		g = gamma4[(unsigned char)sym][g];
+		b = gamma4[(unsigned char)sym][b];
+// DEBUG
+	tm = time(0);
+	if( (tm&2) && i<sizeof(_led_che) && _led_che[i]=='l' )
+		b=0;
+// end DEBUG
+		// check mapping table to swap blue- and green-parts.
 		if( i>=sizeof(_led_tp) || _led_tp[i]!='b' )
 		{
 			// type 'a' is G-R-B
@@ -527,4 +599,56 @@ static char readInt(const char *arg,int *out_value,int _min,int _max)
 	return 1;
 }
 
+static int process_command_packet(const char *cmd)
+{
+	// commands:
+	// GAMMA x num,num,num      x is one of l,w,b,g   , num is sequencce of numbers, new gamma curve.
+	if( !strncmp(cmd,"GAMMA ",6) )
+		return process_command_packet_gamma(cmd+6);
+
+
+	return -1;
+}
+
+static int process_command_packet_gamma(const char *cmd)
+{
+  unsigned char newgamma[0x100];
+  char tabname;
+  unsigned int tab;
+  char dummy[16];
+  int i;
+
+	// first is table name, and whitespace.
+	tabname = *(cmd++);
+	if( !tabname || tabname<'a' || tabname>'z' )return -1;
+	skip_whitespace(&cmd,0);
+
+	// now array of comma-seperated values.
+	for( i=0 ; i<256 ; i++ )
+	{
+	  int32_t val;
+		skip_whitespace(&cmd,0);
+		if(!read_int(&cmd,&val))
+			return -1;
+		if(val>255||val<0)
+			return -1;
+		newgamma[i] = (unsigned char)val;
+		skip_whitespace(&cmd,0);
+		if(i<255)
+		{
+			if(*cmd!=',')return -1;
+			cmd++;
+		}
+	}
+	// here, string must end.
+	skip_whitespace(&cmd,0);
+	if(*cmd)return -1;
+	dummy[0] = tabname;
+	dummy[1] = 0;
+	tab = chr_2_gammano(tabname);
+	printf("command set gamma curve for %s %u.\n",dummy,tab);
+	for(i=0;i<256;i++)
+		gamma4[tab][i] = newgamma[i];
+	return 0;
+}
 
