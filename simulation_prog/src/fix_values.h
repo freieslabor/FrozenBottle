@@ -9,6 +9,7 @@ extern "C" {
 extern const char fix_map_GBswap[];
 extern const char fix_map_4types[];
 extern unsigned int fix_map_GBswap__size;
+extern unsigned int fix_map_4types__size;
 
 #define NUM_GAMMA_CURVES 4
 extern const unsigned char gamma195[];

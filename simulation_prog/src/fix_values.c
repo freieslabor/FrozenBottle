@@ -42,6 +42,8 @@ const char fix_map_4types[] = \
 		"gbbbgglbbllgg" \
 		;
 
+unsigned int fix_map_4types__size = sizeof(fix_map_GBswap);
+
 /*
 #!/usr/bin/python
 import math

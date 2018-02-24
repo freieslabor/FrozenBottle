@@ -1,5 +1,5 @@
 #!/bin/bash
 
-g++ -o hexstack -O3 -ggdb -Wall -pedantic src/*.cpp -lSDL2
+g++ -o hexstack -O3 -ggdb -Wall -pedantic src/*.cpp src/*.c -lSDL2
 
 
