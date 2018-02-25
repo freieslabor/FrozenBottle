@@ -13,7 +13,8 @@ extern unsigned int fix_map_4types__size;
 
 #define NUM_GAMMA_CURVES 4
 extern const unsigned char gamma195[];
-extern char gamma4[NUM_GAMMA_CURVES][256];
+// array for gamma curves. indices:  color-zone , rgb , colorvalue
+extern char gamma4[NUM_GAMMA_CURVES][4][256];
 
 
 

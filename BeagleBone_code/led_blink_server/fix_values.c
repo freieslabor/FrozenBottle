@@ -42,6 +42,8 @@ const char fix_map_4types[] = \
 		"gbbbgglbbllgg" \
 		;
 
+unsigned int fix_map_4types__size = sizeof(fix_map_GBswap);
+
 /*
 #!/usr/bin/python
 import math
@@ -71,7 +73,7 @@ const unsigned char gamma195[] = {
 	0xE3,0xE4,0xE6,0xE8,0xEA,0xEC,0xEE,0xF0,0xF2,0xF3,0xF5,0xF7,0xF9,0xFB,0xFD,0xFF
 };
 
-char gamma4[NUM_GAMMA_CURVES][256];
+char gamma4[NUM_GAMMA_CURVES][4][256];
 
 
 unsigned char chr_2_gammano(char sym)
@@ -89,7 +91,11 @@ void load_default_gammacurves()
 {
   unsigned int i;
 	for( i=0 ; i<NUM_GAMMA_CURVES ; i++ )
-		memcpy(gamma4[i],gamma195,256);
+	{
+		memcpy(gamma4[i][0],gamma195,256);
+		memcpy(gamma4[i][1],gamma195,256);
+		memcpy(gamma4[i][2],gamma195,256);
+	}
 }
 
 void correct_values(unsigned char *buffer,unsigned int numleds)
@@ -109,9 +115,9 @@ void correct_values(unsigned char *buffer,unsigned int numleds)
 		sym = 'w';
 		if( i<sizeof(fix_map_4types) )sym = fix_map_4types[i];
 		sym = chr_2_gammano(sym);
-		r = gamma4[(unsigned char)sym][r];
-		g = gamma4[(unsigned char)sym][g];
-		b = gamma4[(unsigned char)sym][b];
+		r = gamma4[(unsigned char)sym][0][r];
+		g = gamma4[(unsigned char)sym][1][g];
+		b = gamma4[(unsigned char)sym][2][b];
 // DEBUG
 //	tm = time(0);
 //	if( (tm&2) && i<sizeof(fix_map_4types) && fix_map_4types[i]=='l' )

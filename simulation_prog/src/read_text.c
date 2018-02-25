@@ -59,7 +59,7 @@ char read_int(const char **ptr,int32_t *result)
   int64_t tmp;
 	if(!read_int64(&rd,&tmp))
 		{return 0;}
-	if( tmp<((int32_t)0x80000000) || tmp>0x7FFFFFFFUL )
+	if( tmp<((int32_t)0x80000000) || tmp>0x7FFFFFFF )
 		{return 0;}
 	*result=(int32_t)tmp;
 	*ptr=rd;
@@ -71,7 +71,7 @@ char read_uint(const char **ptr,uint32_t *result)
   const char *rd=*ptr;
   int64_t tmp;
 	tmp=read_int64(&rd,&tmp);
-	if( tmp<0 || tmp>0x0FFFFFFFFUL )
+	if( tmp<0 || (uint64_t)tmp>0x0FFFFFFFFUL )
 		{return 0;}
 	*result=(uint32_t)tmp;
 	*ptr=rd;

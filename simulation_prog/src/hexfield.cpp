@@ -109,6 +109,11 @@ bool HexArray::get_sequence_item(unsigned int seq_id,int *out_w,int *out_h,unsig
 	return true;
 }
 
+unsigned int HexArray::get_sequence_count() const
+{
+	return (unsigned int)m_seq_2_grid.size();
+}
+
 bool HexArray::set_sequence_color(unsigned int seq_id,unsigned int color)
 {
 	if( seq_id >= (unsigned int)m_seq_2_grid.size() )

@@ -11,6 +11,7 @@
 int process_command_packet(const char *cmd)
 {
 	// commands:
+	skip_whitespace(&cmd,0);
 	// GAMMA x num,num,num      x is one of l,w,b,g   , num is sequencce of numbers, new gamma curve.
 	if( !strncmp(cmd,"GAMMA ",6) )
 		return process_command_packet_gamma(cmd+6);
@@ -23,7 +24,8 @@ int process_command_packet_gamma(const char *cmd)
 {
   unsigned char newgamma[0x100];
   char tabname;
-  unsigned int tab;
+  char rgb;
+  unsigned int tab,rgbidx;
   char dummy[16];
   int i;
 
@@ -31,6 +33,15 @@ int process_command_packet_gamma(const char *cmd)
 	tabname = *(cmd++);
 	if( !tabname || tabname<'a' || tabname>'z' )return -1;
 	tab = chr_2_gammano(tabname);
+
+	skip_whitespace(&cmd,0);
+
+	// second is channel (r,g,b) , and whitespace.
+	rgb = *(cmd++);
+	if( rgb!='r' && rgb!='g' && rgb!='b' )return -1;
+	rgbidx=0;
+	if(rgb=='g')rgbidx=1;
+	else if(rgb=='b')rgbidx=2;
 
 	skip_whitespace(&cmd,0);
 
@@ -43,7 +54,7 @@ int process_command_packet_gamma(const char *cmd)
 		// is a gamma reset command.
 		printf("command reset gamma curve for %s %u.\n",dummy,tab);
 		for(i=0;i<NUM_GAMMA_CURVES;i++)
-			memcpy( gamma4[i] , gamma195 , 256 );
+			memcpy( gamma4[i][rgbidx] , gamma195 , 256 );
 		return 0;
 	}
 
@@ -69,9 +80,11 @@ int process_command_packet_gamma(const char *cmd)
 	if(*cmd)return -1;
 	dummy[0] = tabname;
 	dummy[1] = 0;
-	printf("command set gamma curve for %s %u.\n",dummy,tab);
+	dummy[2] = rgb;
+	dummy[3] = 0;
+	printf("command set gamma curve for %s(%u) %s.\n",dummy,tab,dummy+2);
 	for(i=0;i<256;i++)
-		gamma4[tab][i] = newgamma[i];
+		gamma4[tab][rgbidx][i] = newgamma[i];
 	return 0;
 }
 

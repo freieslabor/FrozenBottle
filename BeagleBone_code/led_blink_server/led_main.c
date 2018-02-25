@@ -227,6 +227,8 @@ int main(int numargs,const char *const* args)
 		{
 			// no data. generate idle-animation here.
 		  int i;
+			load_default_gammacurves();
+
 			memset( LEDSbuf , IDLE_BRIGHTNESS , 3*LEDS_NUM );
 
 			i = lop%LEDS_NUM;

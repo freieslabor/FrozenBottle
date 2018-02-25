@@ -3,8 +3,9 @@
 # program to send some blinking to UDP for the flozen-bottle setup.
 
 
-import time
+import math
 import sys
+import time
 import argparse
 import LedClientBase
 import noncanon_input
@@ -14,17 +15,83 @@ DEFAULT_PORT = 8901
 NUM = LedClientBase.NUMLEDS
 #NUM = 4
 
-# static patterns. all gray.
-GRAY = (
-	"\x00\x00\x00"*NUM,
-	"\x33\x33\x33"*NUM,
-	"\x66\x66\x66"*NUM,
-	"\x99\x99\x99"*NUM,
-	"\xCC\xCC\xCC"*NUM,
-	"\xFF\xFF\xFF"*NUM
-)
+COMMAND_PCK_PREFIX = "COMMAND_2_SERVER"   # 16 byte command prefix string.
 
-state = 1;
+gammazone_names = ("w","l","b","g")
+
+
+
+class adjpoint(object):
+	__slots__=("bright","adj_r","adj_g","adj_b")
+
+	def __init__(self,bright256):
+		self.bright = int(bright256+0.5)
+		if self.bright<0 or self.bright>255:
+			raise ValueError("bright value of adjpoint must be in range 0..255")
+		self.adj_r = 0
+		self.adj_g = 0
+		self.adj_b = 0
+
+	def get_col(self):
+		r = self.bright+self.adj_r
+		g = self.bright+self.adj_g
+		b = self.bright+self.adj_b
+		r = min(max(r,0),255)
+		g = min(max(g,0),255)
+		b = min(max(b,0),255)
+		return chr(r)+chr(g)+chr(b)
+
+	def get_col0(self):
+		r=g=b=self.bright
+		return chr(r)+chr(g)+chr(b)
+
+	def r_up(self):
+		if self.adj_r >= 32: return
+		self.adj_r += 2
+		self.adj_g -= 1
+		self.adj_b -= 1
+
+	def g_up(self):
+		if self.adj_g >= 32: return
+		self.adj_r -= 1
+		self.adj_g += 2
+		self.adj_b -= 1
+
+	def b_up(self):
+		if self.adj_b >= 32: return
+		self.adj_r -= 1
+		self.adj_g -= 1
+		self.adj_b += 2
+
+	def r_down(self):
+		if self.adj_r <= -32: return
+		self.adj_r -= 2
+		self.adj_g += 1
+		self.adj_b += 1
+
+	def g_down(self):
+		if self.adj_g <= -32: return
+		self.adj_r += 1
+		self.adj_g -= 2
+		self.adj_b += 1
+
+	def b_down(self):
+		if self.adj_b <= -32: return
+		self.adj_r += 1
+		self.adj_g += 1
+		self.adj_b -= 2
+
+
+
+
+
+#import math
+#for i in xrange(1,7):
+#	print 255.0*math.pow(i/7.0,1.9)
+
+points = [adjpoint(6),adjpoint(24),adjpoint(51),adjpoint(88),adjpoint(135),adjpoint(190)]
+
+
 
 def main(args):
 
@@ -52,13 +119,22 @@ def main(args):
 
 	t = 0.0
 	state = 1
+	zone = 0
 
 	tio = noncanon_input.cio()
-	num=4
+	num=30
+
+	# send 'flat' gamma, basically disabling gamma curves in LED server.
+	send_flat_gamma1()
+	_do_quit = False
+
+	points[2].r_down();points[2].r_down();points[2].r_down()
+	###build_fake_gammacurves_from_points()
 
 	for i in xrange(0x7FFF0000):
 
-		data = GRAY[state][:3]*num + "\0\0\0\0\0\0"*5;
+		col = points[state].get_col0()
+		data = col*num + "\0\0\0\0\0\0"*5;
 
 		time.sleep(0.067)
 		t += 0.067
@@ -68,24 +144,47 @@ def main(args):
 			cc = tio.getch()
 			if cc is None:
 				break
-			print(repr(cc))
 
-			if cc=="1":
-				state = 0
-			elif cc=="2":
-				state = 1
-			elif cc=="3":
-				state = 2
-			elif cc=="4":
-				state = 3
-			elif cc=="5":
-				state = 4
-			elif cc=="6":
-				state = 5
+			adj = False
+			if len(cc)==1 and cc>="1" and cc<="9":
+				tmp = ord(cc)-ord("1")
+				if tmp<len(points):
+					state = tmp
+			elif cc=="u":
+				points[state].r_up() ; adj = True
+			elif cc=="i":
+				points[state].g_up() ; adj = True
+			elif cc=="o":
+				points[state].b_up() ; adj = True
+			elif cc=="j":
+				points[state].r_down() ; adj = True
+			elif cc=="k":
+				points[state].g_down() ; adj = True
+			elif cc=="l":
+				points[state].b_down() ; adj = True
+			elif cc=="z":
+				zone = (zone+1) % len(gammazone_names)
+				print "now adjusting zone '%s'" % gammazone_names[zone]
 			elif cc=="+":
 				num = min(num+1,189)
 			elif cc=="-":
 				num = max(num-1,0)
+			elif cc=="q" or cc=="\x1B":
+				_do_quit = True
+			else:
+				print "unknown input " + repr(cc)
+
+			if adj:
+				# was adjusted. build/send fake gamma curve to modify color.
+				fake_gamma_r,fake_gamma_g,fake_gamma_b = build_fake_gammacurves_from_points()
+				# send to server for current colorgroup
+				colgrp = gammazone_names[zone]	# ..... TODO: make this adjustable???
+				send_gamma_curve(colgrp,"r",fake_gamma_r) ; time.sleep(0.01)
+				send_gamma_curve(colgrp,"g",fake_gamma_g) ; time.sleep(0.01)
+				send_gamma_curve(colgrp,"b",fake_gamma_b) ; time.sleep(0.01)
+				t += 0.03
+				# Todo: ..... modify server/sim to accept three different gamma curves for each of the four zones.
+
 
 		#send
 		LedClientBase.send(data)
@@ -93,13 +192,142 @@ def main(args):
 		time.sleep(0.08)
 		t += 0.08
 
+		if _do_quit:
+			break
 
 
 	LedClientBase.closedown()
 
 	return 0
 
+def send_flat_gamma1():
+	for tbnam in gammazone_names:
+		for chan in ("r","g","b"):
+			send_gamma_curve(tbnam,chan,list(xrange(256)))
+			time.sleep(0.05)
+
+def send_gamma_curve(tabname,rgb,curvelist):
+	""" given tab-name (one-char string), channel ("r","g" or "b") and curve (list-of-256-uint8) , send this to led-server """
+	if len(curvelist)!=256:
+		raise ValueError("curvelist must be list of 256 int values (in range 0..255)")
+	if rgb not in ("r","g","b"):
+		raise ValueError("channel must be one of r,g,b")
+	cmd = list()
+	cmd.append(COMMAND_PCK_PREFIX)
+	cmd.append("GAMMA")
+	cmd.append(tabname)
+	cmd.append(rgb)
+	cmd.append(",".join("%d"%b for b in curvelist))
+	cmd = ' '.join(cmd)
+	# print repr(cmd)
+	LedClientBase.send(cmd)
+
+
+def calc_gamma_curve(A,g):
+	""" from A and g, calc the curve  y := A * x^g  . Returns array of ints (0..255) """
+	res = list()
+	for i in xrange(256):
+		x = i/255.0
+		y = int( A*math.pow(listX[i],g) + 0.5 )
+		y = max(min(y,255),0)
+		res.append(y)
+	return res
+
+def find_gamma_curve(listX,listY):
+	""" try to find a function   y := A * x^g   , which most closely matches the values passed in. returns (A,g). """
+	num = len(listX)
+	if num != len(listY):
+		raise ValueError("listX and listY should have same length")
+	if max(listX)>1.0 or min(listX)<0.0:
+		raise ValueError("listX must be values in the range 0 .. 1")
+	if max(listY)>1.5 or min(listY)<0.0:
+		raise ValueError("listX must be values in the range 0 .. 1.5")
+
+	cur_g = 1.2
+	cur_A = 1.0
+	step_g = 0.2
+	step_A = 0.2
+	bestE = 1.0e30
+
+	for loopcnt in xrange(40):
+		tmp_bestE = 1.0e30;tmp_ig=0;tmp_iA=0
+		for ig in xrange(-3,3+1,1):
+			for iA in xrange(-3,3+1,1):
+				# A,g for this run
+				A = cur_A+iA*step_A
+				g = cur_g+ig*step_g
+				# calc sum-errors:
+				E = 0.0
+				for i in xrange(num):
+					dif = listY[i] - A*math.pow(listX[i],g)
+					E += dif*dif
+				if E<tmp_bestE:
+					tmp_bestE = E
+					tmp_ig=ig
+					tmp_iA=iA
+		A = cur_A+tmp_iA*step_A
+		g = cur_g+tmp_ig*step_g
+		#print "run: tmp_ig=%d tmp_iA=%d, step_A=%.6f step_g=%.6f A=%.5f g=%.5f    sumE=%.8f" % (tmp_ig,tmp_iA,step_A,step_g,A,g,tmp_bestE)
+		if tmp_iA*tmp_iA<9:
+			step_A*=0.8
+		if tmp_ig*tmp_ig<9:
+			step_g*=0.8
+		cur_A = A
+		cur_g = g
+
+	return (cur_A,cur_g)
+
+
+def build_fake_gammacurves_from_points():
+	# get/build points list.
+	pts = list()
+	for pt in points:
+		x = pt.bright
+		yr = pt.bright + pt.adj_r
+		yg = pt.bright + pt.adj_g
+		yb = pt.bright + pt.adj_b
+		pts.append((x,yr,yg,yb))
+	pts.sort()
+	if pts[0][0]>0:
+		pts.insert(0,(0,0,0,0))
+	if pts[-1][0]<255:
+		pts.insert(len(pts),(255,255,255,255))
+
+	# do linear piece-by-piece interpolation
+	here = 0
+	last = (0,0,0,0)
+	res = list()
+	for x in xrange(256):
+		if x>pts[here][0]:
+			last = pts[here]
+			here+=1
+		if x==pts[here][0]:
+			r,g,b = pts[here][1:]
+		else:
+			fac = (x-last[0])/float(pts[here][0]-last[0])
+			r = int( last[1] + fac*float(pts[here][1]-last[1]) + 0.5 )
+			g = int( last[1] + fac*float(pts[here][1]-last[1]) + 0.5 )
+			b = int( last[1] + fac*float(pts[here][1]-last[1]) + 0.5 )
+		r = min(max(r,0),255)
+		g = min(max(g,0),255)
+		b = min(max(b,0),255)
+		res.append((x,r,g,b))
+	res_r = list()
+	res_g = list()
+	res_b = list()
+	for x in xrange(256):
+#		print repr(res[x])
+		res_r.append(res[x][1])
+		res_g.append(res[x][2])
+		res_b.append(res[x][3])
+	return res_r,res_g,res_b
+
 
 
 if __name__=="__main__":
+	if False:
+		# ugly test or debug code.
+		(A,g) = find_gamma_curve( (0.0,0.25,0.5,0.75,1.0) , (0.0,0.1,0.4,0.7,1.1) )
+		print repr((A,g))
+		sys.exit(1)
 	sys.exit(main(sys.argv[1:]))

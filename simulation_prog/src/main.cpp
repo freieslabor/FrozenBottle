@@ -171,12 +171,21 @@ int main(int argc, char* argv[])
 			no_input_count++;
 			if(!(no_input_count&15))
 			{
-			  unsigned int color = 0;
+			  unsigned int color = 0x111111ul;
+			  unsigned int t,num;
+			  unsigned char *wr;
+				load_default_gammacurves();
+				num = field.get_sequence_count();
 				if(no_input_count&16)
 					color = 0x888888ul;
-				for(unsigned int t=0u;;t++)
-					if(!field.set_sequence_color(t,color))
-						break;
+				for(t=0,wr=input_buffer;t<num;t++)
+				{
+					*(wr++) = (color)&255;
+					*(wr++) = (color>>8)&255;
+					*(wr++) = (color>>16)&255;
+				}
+				// use same processing as normal data for idle-blink.
+				process_UDP_data( input_buffer , num*3 );
 			}
 		}
 		draw(rend,frameNo);
@@ -204,11 +213,18 @@ leave:
 void process_UDP_data( unsigned char *input_buffer , unsigned int input_data )
 {
   unsigned int i,numl;
-
+/*
+  char dummy[64+4];static char hx[]="0123456789abcdef";
+	for(i=0;i<32&&i<input_data;i++)
+		{dummy[i+i] = hx[input_buffer[i]>>4];dummy[i+i+1] = hx[input_buffer[i]&15];}
+	dummy[i+i]=0;
+	printf("packet   '%s'\n",dummy);
+*/
 	if( input_data>=16 && !memcmp(input_buffer,COMMAND_PCK_PREFIX,16) )
 	{
 		// is a command, not RGB data.
 		process_command_packet((const char*)(input_buffer+16));
+		return;
 	}
 
 	numl = input_data/3;
@@ -217,10 +233,14 @@ void process_UDP_data( unsigned char *input_buffer , unsigned int input_data )
 	// filter/process values (gamma, channel swap, ...)
 	correct_values(input_buffer,numl);
 
+	// at this point, the 'real' server would send the data to the LED strip.
+	// here, we simulate, undo the GB swaps, add color differences, 
+	// and the fact that monitor RGB colors get a gamma curve in the monitor (so do inverse-gamma).
 	for( i=0 ; i<numl ; i++ )
 	{
 	  unsigned int r,g,b;
 	  char typ;
+		// undo the color-swaps. we want RGB here.
 		if( i>=fix_map_GBswap__size || fix_map_GBswap[i]!='b' )
 		{
 			// type 'a' is G-R-B
@@ -234,28 +254,31 @@ void process_UDP_data( unsigned char *input_buffer , unsigned int input_data )
 			g = *(input_buffer++);
 		}
 
+		// increase to 10 bit for less rounding errors for subsequent calculations.
 		r = (r<<2)+(r>>6);
 		g = (g<<2)+(g>>6);
 		b = (b<<2)+(b>>6);
 
-		// ..... falsify to simulate wrong colors??
+		// falsify to simulate wrong colors or the different LED types in the setup (flakey gray).
 		typ = 'w';
 		if( i<fix_map_4types__size )
 			typ = fix_map_4types[i];
 		switch(typ)
 		{
 		case 'b':
-			r = (r*0xE8)>>8;
-			g = (g*0xE8)>>8;
+			r = (r*0xD0)>>8;
+			g = (g*0xD0)>>8;
 			break;
 		case 'l':
-			g = (g*0xE8)>>8;
+			g = (g*0xD0)>>8;
 			break;
 		case 'g':
-			b = (b*0xE8)>>8;
+			b = (b*0xD0)>>8;
 			break;
 		}
 
+		// now apply inverse-gamma, because we have light-linear values here,
+		// but the graphics RGB values will get gamma adjusted in the monitor.
 		r = inverse_gamma195[r];
 		g = inverse_gamma195[g];
 		b = inverse_gamma195[b];
