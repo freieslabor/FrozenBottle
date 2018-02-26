@@ -1,6 +1,19 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-# program to send some blinking to UDP for the flozen-bottle setup.
+# Programm zum Eisntellen der Farbkorrektur für die verschiedenen Sorten an LEDs, 
+# die im FrozenBottle verbaut sind und ein mittelgraues Bild 'wolkig' machen.
+#
+#
+CTRLHELP = """
+Steuerung:
+  Tasten 1..6   Helligkeitsstufe. Es muss für alle Stufen die Farbe eingestellt werden.
+  Taste z       Zone. Wahl welche der 4 Farbzonen eingestellt wird.
+  Tasten u,i,o  R,G,B heller drehen.
+  Tasten j,k,l  R,G,B dunkler drehen.
+  Taste f       flash. aktuelle Farbzone durch blitzen hervorheben.
+  Taste q       Beenden.
+"""
 
 
 import math
@@ -16,6 +29,8 @@ NUM = LedClientBase.NUMLEDS
 #NUM = 4
 
 COMMAND_PCK_PREFIX = "COMMAND_2_SERVER"   # 16 byte command prefix string.
+
+MEAN_GAMMA = 1.9
 
 gammazone_names = ("w","l","b","g")
 
@@ -89,7 +104,8 @@ class adjpoint(object):
 #for i in xrange(1,7):
 #	print 255.0*math.pow(i/7.0,1.9)
 
-points = [adjpoint(6),adjpoint(24),adjpoint(51),adjpoint(88),adjpoint(135),adjpoint(190)]
+brightness_points = (24,51,88,135)  # ,190
+
 
 
 
@@ -121,19 +137,31 @@ def main(args):
 	state = 1
 	zone = 0
 
+	# generate 'points'
+	global points
+	points = list()
+	for tabname in gammazone_names:
+		pl = list()
+		for bright in brightness_points:
+			pl.append(adjpoint(bright))
+		points.append(pl)
+	restore_points_settings()
+
 	tio = noncanon_input.cio()
-	num=30
+	num=100
 
 	# send 'flat' gamma, basically disabling gamma curves in LED server.
-	send_flat_gamma1()
+	for zn in xrange(len(gammazone_names)):
+		send_all_fake_gamma_curves(gammazone_names[zn],0.05)
 	_do_quit = False
 
-	points[2].r_down();points[2].r_down();points[2].r_down()
-	###build_fake_gammacurves_from_points()
+
+	flash = 0
 
 	for i in xrange(0x7FFF0000):
 
-		col = points[state].get_col0()
+		tmp = brightness_points[state]
+		col = chr(tmp)+chr(tmp)+chr(tmp)
 		data = col*num + "\0\0\0\0\0\0"*5;
 
 		time.sleep(0.067)
@@ -148,27 +176,32 @@ def main(args):
 			adj = False
 			if len(cc)==1 and cc>="1" and cc<="9":
 				tmp = ord(cc)-ord("1")
-				if tmp<len(points):
+				if tmp<len(points[0]):
 					state = tmp
 			elif cc=="u":
-				points[state].r_up() ; adj = True
+				points[zone][state].r_up() ; adj = True
 			elif cc=="i":
-				points[state].g_up() ; adj = True
+				points[zone][state].g_up() ; adj = True
 			elif cc=="o":
-				points[state].b_up() ; adj = True
+				points[zone][state].b_up() ; adj = True
 			elif cc=="j":
-				points[state].r_down() ; adj = True
+				points[zone][state].r_down() ; adj = True
 			elif cc=="k":
-				points[state].g_down() ; adj = True
+				points[zone][state].g_down() ; adj = True
 			elif cc=="l":
-				points[state].b_down() ; adj = True
+				points[zone][state].b_down() ; adj = True
 			elif cc=="z":
 				zone = (zone+1) % len(gammazone_names)
+				flash=4
 				print "now adjusting zone '%s'" % gammazone_names[zone]
+			elif cc=="f":
+				flash = 1
 			elif cc=="+":
 				num = min(num+1,189)
 			elif cc=="-":
 				num = max(num-1,0)
+			elif cc=="g" or cc=="\x1B":
+				gen_output_tables()
 			elif cc=="q" or cc=="\x1B":
 				_do_quit = True
 			else:
@@ -176,15 +209,20 @@ def main(args):
 
 			if adj:
 				# was adjusted. build/send fake gamma curve to modify color.
-				fake_gamma_r,fake_gamma_g,fake_gamma_b = build_fake_gammacurves_from_points()
-				# send to server for current colorgroup
-				colgrp = gammazone_names[zone]	# ..... TODO: make this adjustable???
-				send_gamma_curve(colgrp,"r",fake_gamma_r) ; time.sleep(0.01)
-				send_gamma_curve(colgrp,"g",fake_gamma_g) ; time.sleep(0.01)
-				send_gamma_curve(colgrp,"b",fake_gamma_b) ; time.sleep(0.01)
+				send_all_fake_gamma_curves(gammazone_names[zone],0.01)
 				t += 0.03
 				# Todo: ..... modify server/sim to accept three different gamma curves for each of the four zones.
 
+		# flash?
+		if flash>0:
+			flash = (flash+1)%8
+			if flash==0:
+				send_all_fake_gamma_curves(gammazone_names[zone],0.01)
+				t += 0.03
+			else:
+				gc = [(flash&1)*64+32]
+				gc = gc*256
+				send_gamma_curve(gammazone_names[zone],'g',gc)
 
 		#send
 		LedClientBase.send(data)
@@ -278,10 +316,16 @@ def find_gamma_curve(listX,listY):
 	return (cur_A,cur_g)
 
 
-def build_fake_gammacurves_from_points():
+def build_fake_gammacurves_from_points(tabname):
+	# which tab?
+	for zone in xrange(len(gammazone_names)):
+		if gammazone_names[zone] == tabname:
+			break
+	else:
+		raise ValueError("invalid tabname. must be in list gammazone_names")
 	# get/build points list.
 	pts = list()
-	for pt in points:
+	for pt in points[zone]:
 		x = pt.bright
 		yr = pt.bright + pt.adj_r
 		yg = pt.bright + pt.adj_g
@@ -322,6 +366,60 @@ def build_fake_gammacurves_from_points():
 		res_b.append(res[x][3])
 	return res_r,res_g,res_b
 
+def send_all_fake_gamma_curves(tabname,t_delay = None):
+	if t_delay is None or t_delay<=0.0:
+		t_delay=0.0
+	fake_gamma_r,fake_gamma_g,fake_gamma_b = build_fake_gammacurves_from_points(tabname)
+	# send to server for current colorgroup
+	send_gamma_curve(tabname,"r",fake_gamma_r) ; time.sleep(t_delay)
+	send_gamma_curve(tabname,"g",fake_gamma_g) ; time.sleep(t_delay)
+	send_gamma_curve(tabname,"b",fake_gamma_b) ; time.sleep(t_delay)
+
+def gen_output_tables():
+	# first, table to keep adjustments in this program.
+	res = list()
+	a = res.append
+	a("def restore_points_settings():")
+	for zone in xrange(len(gammazone_names)):
+		for bl in xrange(len(points[zone])):
+			p = points[zone][bl]
+			if p.adj_r != 0: a("  points[%d][%d].adj_r = %d"%(zone,bl,p.adj_r))
+			if p.adj_g != 0: a("  points[%d][%d].adj_g = %d"%(zone,bl,p.adj_g))
+			if p.adj_b != 0: a("  points[%d][%d].adj_b = %d"%(zone,bl,p.adj_b))
+	if len(res)==1:
+		a("  pass")
+	print "\n"
+	print "\n".join(res)
+	print "\n"
+
+	# second, generate gamma tables for server
+	res = list()
+	a = res.append
+	# ...... TODO: add this.
+	# calc 'x' values for the bright values
+	xv = list()
+	for bright in brightness_points:
+		xv.append( int(255.0*math.pow(bright/255.0,1.0/MEAN_GAMMA)+0.5) )
+	for zone in xrange(len(gammazone_names)):
+		for chan in ('r','g','b'):
+			adjnam = 'adj_'+chan
+			listX=list()
+			listY=list()
+			for bl in xrange(len(brightness_points)):
+				bright = brightness_points[bl]
+				_adj = getattr( points[zone][bl] , adjnam )
+				listX.append(xv[bl]/255.0)
+				listY.append((bright+_adj)/255.0)
+			# now estimate gamma curve
+			_A,_g = find_gamma_curve(listX,listY)
+			print "gamma curve for zone '%s' for '%s':  A=%.3f  g=%.3f" % (gammazone_names[zone],chan,_A,_g)
+			# ..... TODO: generate table.
+
+	print "\n\n"
+
+
+def restore_points_settings():
+  pass
 
 
 if __name__=="__main__":
