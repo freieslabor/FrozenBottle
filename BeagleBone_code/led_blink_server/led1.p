@@ -2,7 +2,7 @@
 
 .origin 0
 
-//#include "../ti_pru_code/PRU.hp"
+//#include "./PRU.hp"
 
 MEMACCESSPRUDATARAM:
 

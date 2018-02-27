@@ -1,22 +1,11 @@
-/*
- * PRU_memAccessPRUDataRam.c
-*/
-
-/*****************************************************************************
-* PRU_memAccessPRUDataRam.c
-*
-* The PRU reads and stores values into the PRU Data RAM memory. PRU Data RAM
-* memory has an address in both the local data memory map and global memory
-* map. The example accesses the local Data RAM using both the local address
-* through a register pointed base address and the global address pointed by
-* entries in the constant table.
-*
-******************************************************************************/
-
+#include <malloc.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <time.h>
 #include <unistd.h>
+#include "commands.h"
+#include "fix_values.h"
 
 // headers for network and UDP
 #include <arpa/inet.h>
@@ -27,9 +16,9 @@
 #define PRU_MEM_LEDS_START 0x0800
 #define PRU_MEM_LEDS_END 0x1E00
 
-#define LEDS_NUM (16*60)  // number of leds for idle-play
+#define LEDS_NUM (7*(13+14))  // number of leds for idle-play
 #define IDLE_BRIGHTNESS 32  // bright-value (PWM, not pre-gamma) for idle-loop.
-#define LIMIT_AVG_BRIGHT 48
+#define LIMIT_AVG_BRIGHT 255 // 48
 
 // PRU driver header file
 #include <prussdrv.h>
@@ -42,12 +31,11 @@ static void showHex(const void *adr,unsigned int baseadr,unsigned int num);
 static void showHexL(const void *adr,unsigned int baseadr,unsigned int num);
 static unsigned char *loadfile_malloc(const char *filename,unsigned int *out_size);
 static void adjust_timeout(char to_lng);
-static void correct_values(unsigned char *buffer,unsigned int bytes);
-static void limit_power(unsigned char *vals,unsigned int num_leds,unsigned char avg_max_pwm);
 static char readInt(const char *arg,int *out_value,int _min,int _max);
 
 
-const char _led_tp[] = "a";
+#define MAX_PACK_SIZE 10240
+
 
 
 typedef struct
@@ -63,35 +51,7 @@ typedef struct
 
 _self self;
 
-/*
-#!/usr/bin/python
-import math
-vals=list();gamma=1.95;num=256
-for i in xrange(num):
- vals.append( max( int(255.0*math.pow(i/float(num-1),gamma)+0.5) , 0 ) )
 
-for i in xrange(0,num,16):
- print ' '+','.join("0x%02X"%b for b in vals[i:i+16])
-*/
-
-static const unsigned char gamma[] = {
-	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x01,0x01,0x01,0x01,
-	0x01,0x01,0x01,0x02,0x02,0x02,0x02,0x02,0x03,0x03,0x03,0x03,0x03,0x04,0x04,0x04,
-	0x04,0x05,0x05,0x05,0x06,0x06,0x06,0x07,0x07,0x07,0x08,0x08,0x08,0x09,0x09,0x09,
-	0x0A,0x0A,0x0B,0x0B,0x0B,0x0C,0x0C,0x0D,0x0D,0x0E,0x0E,0x0F,0x0F,0x10,0x10,0x11,
-	0x11,0x12,0x12,0x13,0x13,0x14,0x14,0x15,0x16,0x16,0x17,0x17,0x18,0x19,0x19,0x1A,
-	0x1B,0x1B,0x1C,0x1D,0x1D,0x1E,0x1F,0x1F,0x20,0x21,0x21,0x22,0x23,0x24,0x24,0x25,
-	0x26,0x27,0x28,0x28,0x29,0x2A,0x2B,0x2C,0x2C,0x2D,0x2E,0x2F,0x30,0x31,0x31,0x32,
-	0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3A,0x3B,0x3C,0x3D,0x3E,0x3F,0x3F,0x40,0x41,
-	0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,0x50,0x51,0x53,
-	0x54,0x55,0x56,0x57,0x58,0x59,0x5B,0x5C,0x5D,0x5E,0x5F,0x61,0x62,0x63,0x64,0x66,
-	0x67,0x68,0x69,0x6B,0x6C,0x6D,0x6E,0x70,0x71,0x72,0x74,0x75,0x76,0x78,0x79,0x7A,
-	0x7C,0x7D,0x7F,0x80,0x81,0x83,0x84,0x86,0x87,0x88,0x8A,0x8B,0x8D,0x8E,0x90,0x91,
-	0x93,0x94,0x96,0x97,0x99,0x9A,0x9C,0x9D,0x9F,0xA0,0xA2,0xA3,0xA5,0xA7,0xA8,0xAA,
-	0xAB,0xAD,0xAF,0xB0,0xB2,0xB4,0xB5,0xB7,0xB8,0xBA,0xBC,0xBE,0xBF,0xC1,0xC3,0xC4,
-	0xC6,0xC8,0xCA,0xCB,0xCD,0xCF,0xD1,0xD2,0xD4,0xD6,0xD8,0xD9,0xDB,0xDD,0xDF,0xE1,
-	0xE3,0xE4,0xE6,0xE8,0xEA,0xEC,0xEE,0xF0,0xF2,0xF3,0xF5,0xF7,0xF9,0xFB,0xFD,0xFF
-};
 
 static unsigned char LEDSbuf[3*LEDS_NUM];
 
@@ -107,7 +67,12 @@ int main(int numargs,const char *const* args)
   unsigned int size;
   const char *errtxt=0;
 
+	// DEBUG
+//	process_command_packet("GAMMA w 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255");
+
 	memset( &self , 0 , sizeof(self) );
+	load_default_gammacurves();
+
 	self.udp_sock = -1;
 	self.timeout_long = 33; // dummy. not 1, not 0
 
@@ -251,17 +216,19 @@ int main(int numargs,const char *const* args)
 	{
 	  int ln;
 	  socklen_t adrlen;
-	  unsigned char pckbuf[10240];
+	  unsigned char pckbuf[MAX_PACK_SIZE+4];
 	  struct sockaddr_in6 srcadr;
 
 
 		memset( &srcadr , 0 , sizeof(srcadr) );
 		adrlen = sizeof(srcadr);
-		ln = recvfrom( self.udp_sock , pckbuf , sizeof(pckbuf) , MSG_TRUNC , (struct sockaddr*)&srcadr , &adrlen );
+		ln = recvfrom( self.udp_sock , pckbuf , MAX_PACK_SIZE , MSG_TRUNC , (struct sockaddr*)&srcadr , &adrlen );
 		if( ln==EAGAIN || ln==EWOULDBLOCK || ln==-1 )
 		{
-			// generate something here.
+			// no data. generate idle-animation here.
 		  int i;
+			load_default_gammacurves();
+
 			memset( LEDSbuf , IDLE_BRIGHTNESS , 3*LEDS_NUM );
 
 			i = lop%LEDS_NUM;
@@ -274,8 +241,14 @@ int main(int numargs,const char *const* args)
 			correct_values(LEDSbuf,LEDS_NUM);
 
 			adjust_timeout(0);
+		}else if( ln>=16 && !memcmp(pckbuf,COMMAND_PCK_PREFIX,16) )
+		{
+			// command-packet
+			pckbuf[ln] = 0;	// null-terminate string.
+			process_command_packet((const char*)pckbuf+16);
 		}else if(ln>=5)
 		{
+			// is a packet of color-information
 			if( ln > (3*LEDS_NUM) )
 				ln = (3*LEDS_NUM);
 			ln /= 3;
@@ -337,6 +310,7 @@ leave:
 
 	return (errtxt?5:0);
 }
+
 
 
 
@@ -427,66 +401,6 @@ static void adjust_timeout(char to_lng)
 	setsockopt(self.udp_sock,SOL_SOCKET,SO_RCVTIMEO,(const char*)&tv,sizeof(tv));
 }
 
-static void correct_values(unsigned char *buffer,unsigned int numleds)
-{
-  unsigned int i;
-	for(i=0;i<numleds;i++)
-	{
-		unsigned char r,g,b;
-		r=buffer[0];
-		g=buffer[1];
-		b=buffer[2];
-		r = gamma[r];
-		g = gamma[g];
-		b = gamma[b];
-		if( i>=sizeof(_led_tp) || _led_tp[i]!='b' )
-		{
-			// type 'a' is G-R-B
-			*(buffer++)=g;
-			*(buffer++)=r;
-			*(buffer++)=b;
-		}else{
-			// type 'b' is B-R-G
-			*(buffer++)=b;
-			*(buffer++)=r;
-			*(buffer++)=g;
-		}
-	}
-}
-
-// limits values in-place in input buffer
-static void limit_power(unsigned char *vals,unsigned int num_leds,unsigned char avg_max_pwm)
-{
-  unsigned int sumC1,sumC2,sumC3;
-  unsigned int pow,max;
-  unsigned int fact;
-  unsigned int i;
-  unsigned char *p;
-	// count sums
-	sumC1=sumC2=sumC3=0;
-	for( p=vals,i=0 ; i<num_leds ; i++ )
-	{
-		sumC1 += *(p++);
-		sumC2 += *(p++);
-		sumC3 += *(p++);
-	}
-	pow = sumC1+sumC2+sumC3;
-	max = avg_max_pwm*3*num_leds;
-	if( pow <= max )
-		return;
-	// is too high. need to throttle.
-	// with 60*60 LEDs, and 3 parts, all 0xFF, value is still less than (1<<22).
-	fact = (max<<8) / pow;
-	// scale all.
-	for( p=vals,i=0 ; i<num_leds ; i++ )
-	{
-		p[0] = (unsigned char)((fact*p[0])>>8);
-		p[1] = (unsigned char)((fact*p[1])>>8);
-		p[2] = (unsigned char)((fact*p[2])>>8);
-		p += 3;
-	}
-}
-
 static char readInt(const char *arg,int *out_value,int _min,int _max)
 {
   int res=0;
@@ -509,5 +423,3 @@ static char readInt(const char *arg,int *out_value,int _min,int _max)
 	*out_value = res;
 	return 1;
 }
-
-

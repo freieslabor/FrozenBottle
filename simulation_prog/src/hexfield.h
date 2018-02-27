@@ -48,6 +48,9 @@ class HexArray
 	// get an item. returned coordinates are screen-rect-coords. W-step is 2, next row is interleaved in it.
 	bool get_sequence_item(unsigned int seq_id,int *out_w,int *out_h,unsigned int *out_color) const;
 
+	// query number of sequence items
+	unsigned int get_sequence_count() const;
+
 	// set one color value
 	bool set_sequence_color(unsigned int seq_id,unsigned int color);
 

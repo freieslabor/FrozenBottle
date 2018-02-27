@@ -12,13 +12,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\catch_ctrlC.cpp" />
+    <ClCompile Include="src\commands.c" />
+    <ClCompile Include="src\fix_values.c" />
     <ClCompile Include="src\hexfield.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\read_text.c" />
     <ClCompile Include="src\UDPrecv.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\catch_ctrlC.h" />
+    <ClInclude Include="src\commands.h" />
+    <ClInclude Include="src\fix_values.h" />
     <ClInclude Include="src\hexfield.h" />
+    <ClInclude Include="src\read_text.h" />
     <ClInclude Include="src\UDPrecv.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
