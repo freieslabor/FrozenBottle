@@ -36,6 +36,18 @@ int process_command_packet_gamma(const char *cmd)
 
 	skip_whitespace(&cmd,0);
 
+	// here might be the word 'reset'.
+	if( !strncmp(cmd,"reset",5) )
+	{
+		cmd+=5;
+		skip_whitespace(&cmd,0);
+		if(*cmd)return -1;
+		// is a gamma reset command.
+		printf("command reset gamma curves.\n");
+		load_default_gammacurves();
+		return 0;
+	}
+
 	// second is channel (r,g,b) , and whitespace.
 	rgb = *(cmd++);
 	if( rgb!='r' && rgb!='g' && rgb!='b' )return -1;
@@ -44,19 +56,6 @@ int process_command_packet_gamma(const char *cmd)
 	else if(rgb=='b')rgbidx=2;
 
 	skip_whitespace(&cmd,0);
-
-	// here might be the word 'reset'.
-	if( !strncmp(cmd,"reset",5) )
-	{
-		cmd+=5;
-		skip_whitespace(&cmd,0);
-		if(*cmd)return -1;
-		// is a gamma reset command.
-		printf("command reset gamma curve for %s %u.\n",dummy,tab);
-		for(i=0;i<NUM_GAMMA_CURVES;i++)
-			memcpy( gamma4[i][rgbidx] , gamma195 , 256 );
-		return 0;
-	}
 
 	// now array of comma-seperated values.
 	for( i=0 ; i<256 ; i++ )

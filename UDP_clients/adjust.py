@@ -32,7 +32,7 @@ COMMAND_PCK_PREFIX = "COMMAND_2_SERVER"   # 16 byte command prefix string.
 
 MEAN_GAMMA = 1.9
 
-gammazone_names = ("w","l","b","g")
+gammazone_names = ("l","w","g","b")
 
 
 
@@ -152,7 +152,7 @@ def main(args):
 
 	# send 'flat' gamma, basically disabling gamma curves in LED server.
 	for zn in xrange(len(gammazone_names)):
-		send_all_fake_gamma_curves(gammazone_names[zn],0.05)
+		send_all_fake_gamma_curves(gammazone_names[zn],0.10)
 	_do_quit = False
 
 
@@ -400,7 +400,11 @@ def gen_output_tables():
 	xv = list()
 	for bright in brightness_points:
 		xv.append( int(255.0*math.pow(bright/255.0,1.0/MEAN_GAMMA)+0.5) )
+	a("static const float gamma_curve_cal_values[NUM_GAMMA_CURVES][3][2] =")
+	a("{")
 	for zone in xrange(len(gammazone_names)):
+		tabnam = gammazone_names[zone]
+		pp = list()
 		for chan in ('r','g','b'):
 			adjnam = 'adj_'+chan
 			listX=list()
@@ -412,14 +416,52 @@ def gen_output_tables():
 				listY.append((bright+_adj)/255.0)
 			# now estimate gamma curve
 			_A,_g = find_gamma_curve(listX,listY)
-			print "gamma curve for zone '%s' for '%s':  A=%.3f  g=%.3f" % (gammazone_names[zone],chan,_A,_g)
-			# ..... TODO: generate table.
+#			print "gamma curve for zone '%s' for '%s':  A=%.3f  g=%.3f" % (tabnam,chan,_A,_g)
+			pp.append("{%.3f,%.3f}"%(_A,_g))
+		a("  {%s},// Zone '%s'"%(",".join(pp),tabnam))
+	a("}")
 
-	print "\n\n"
+	print "\n"
+	print "\n".join(res)
+	print "\n"
 
 
 def restore_points_settings():
-  pass
+  points[0][0].adj_r = 2
+  points[0][0].adj_g = 2
+  points[0][0].adj_b = -4
+  points[0][1].adj_r = 9
+  points[0][1].adj_g = 6
+  points[0][1].adj_b = -15
+  points[0][2].adj_r = 15
+  points[0][2].adj_g = 12
+  points[0][2].adj_b = -27
+  points[0][3].adj_r = 15
+  points[0][3].adj_g = 18
+  points[0][3].adj_b = -33
+  points[2][0].adj_r = -4
+  points[2][0].adj_g = -1
+  points[2][0].adj_b = 5
+  points[2][1].adj_r = -7
+  points[2][1].adj_g = -1
+  points[2][1].adj_b = 8
+  points[2][2].adj_r = -11
+  points[2][2].adj_g = -2
+  points[2][2].adj_b = 13
+  points[2][3].adj_r = -5
+  points[2][3].adj_g = -5
+  points[2][3].adj_b = 10
+  points[3][0].adj_r = 3
+  points[3][0].adj_b = -3
+  points[3][1].adj_r = 18
+  points[3][1].adj_g = -3
+  points[3][1].adj_b = -15
+  points[3][2].adj_r = 28
+  points[3][2].adj_g = -5
+  points[3][2].adj_b = -23
+  points[3][3].adj_r = 40
+  points[3][3].adj_g = -8
+  points[3][3].adj_b = -32
 
 
 if __name__=="__main__":
