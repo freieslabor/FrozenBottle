@@ -9,9 +9,13 @@ import random
 
 DEFAULT_PORT = 8901
 
-TIMESTEP = 0.01
+TIMESTEP = 0.003
 
 PRIMITIVEWALK_STEP_SIZE = 0.005
+
+SIZE = 3
+
+SEED = int(time.time())
 
 # for some reason, the six compat-module did not run properly on BBB.
 try:
@@ -25,31 +29,29 @@ def main(args):
 	parser.add_argument("address",type=str,help="UDP address")
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
-
-	print repr(aa)
-
+        print(aa)
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
 	if aa.port is not None:
-		port = aa.port
+	    port = aa.port
 
 	if port<=0 or port==0xFFFF:
-		sys.stderr.write("bad port number %u\n"%port)
-		return 1
+	    sys.stderr.write("bad port number %u\n"%port)
+	    return 1
 
 	if aa.address is not None:
-		address = aa.address
+	    address = aa.address
 
 	if not LedClientBase.connect(address,port):
-		return 1
+	    return 1
 
-        gen = generator(5)
+        gen = generator(SIZE,SEED)
         grid, knots = gen.generate()
+        gen.print_map()
         w = Walker(math.pi, gen.start, knots)
         v = Viewer(resX=27,resY=27)
 
-	for i in xrange(0x7FFF0000):
-                w.move()
+	while w.move():
 
 		x,y,r = w.getpos()
 		#v.new_pos( 0.5,1.5 , math.pi*0.500*(i/20.0) )
@@ -70,7 +72,6 @@ def main(args):
 			seq.append( chr(col&255) + chr((col>>8)&255) + chr((col>>16)&255) )
 
 		seq = "".join(seq)
-		print(repr(seq))
 
 		LedClientBase.send("".join(seq))
                 w.move()
@@ -92,6 +93,9 @@ class Wall(object):
 		self.y1=float(y1)
 		self.walldir=math.atan2(y1-y0,x1-x0)
 		self.color = 0x00EE2211
+        
+        def p(self):
+            print("("+str(self.x0)+","+str(self.y0)+"),("+str(self.x1)+","+str(self.y1)+")")
 
 	def hit(self,startX,startY,dx,dy):
 		# zwei Geraden. erste: diese Wand, zweite, der Blickvektor.
@@ -147,7 +151,7 @@ class Grid(object):
 				bestdist=dist
 				bestside=side
 		if besthit is None:
-			return None,None
+			return None, None, None
 		return besthit,bestdist,bestside
 
 WALL_H = 1.0
@@ -205,7 +209,7 @@ class Viewer(object):
 		qsx = -vy
 		qsy = vx
 		# with of  orthogonal sampling edge
-		wdd = math.sqrt( (math.cos(self.fow)-1.0)**2 + (math.sin(self.fow))**2 )
+		wdd = 0.5*math.sqrt( (math.cos(self.fow)-1.0)**2 + (math.sin(self.fow))**2 )
 		#print("DEBUG: wdd = %f"%wdd)
 		for i in xrange(self.resX):
 			q = i/float(self.resX-1) - 0.5  # -1 .. 1
@@ -219,7 +223,8 @@ class Viewer(object):
 				walldir = wall.walldir
 				if side:
 					walldir += math.pi
-				r,g,b = LedClientBase.hsv2rgb_float( walldir/(2.0*math.pi) , 0.8 , 1.0/max(1.0,math.pow(dist,1.0)) )
+				r,g,b = LedClientBase.hsv2rgb_float( walldir/(2.0*math.pi) , 0.8 
+                                        , 1.0/max(1.0,2.0*math.pow(dist,0.8)) )
 				color = int(r*255.0+0.5) + int(g*255.0+0.5)*0x0100 + int(b*255.0+0.5)*0x010000
 			else:
 				# looking into the void.
@@ -270,39 +275,40 @@ class knot(object):
         return self.neightbors
 
     def gen(self,start,seed,size):
+        th = 75
         #north 
-        random.seed = str(seed) + str(self.pos) + str((self.pos[0],self.pos[1]+1))
-        if random.randint(0,1):
+        self.neightbors = list()
+        random.seed(str(seed) + str((self.pos[0],self.pos[1])) + str((self.pos[0],self.pos[1]+1)))
+        if random.randint(0,100) < th:
             self.north = knot(self.pos[0], self.pos[1]+1)
             self.neightbors.append(self.north)
             if self.north.getdist(start) > size:
                 self.neightbors.remove(self.north)
                 self.north = None
         #east  
-        random.seed = str(seed) + str(self.pos) + str((self.pos[0]+1,self.pos[1]))
-        if random.randint(0,1):
+        random.seed(str(seed) + str((self.pos[0],self.pos[1])) + str((self.pos[0]+1,self.pos[1])))
+        if random.randint(0,100) < th:
             self.east = knot(self.pos[0]+1, self.pos[1])
             self.neightbors.append(self.east)
             if self.east.getdist(start) > size:
                 self.neightbors.remove(self.east)
                 self.east = None
         #south  
-        random.seed = str(seed) + str((self.pos[0],self.pos[1]-1)) + str(self.pos)
-        if random.randint(0,1):
+        random.seed(str(seed) + str((self.pos[0],self.pos[1]-1)) + str((self.pos[0],self.pos[1])))
+        if random.randint(0,100) < th:
             self.south = knot(self.pos[0], self.pos[1]-1)
             self.neightbors.append(self.south)
             if self.south.getdist(start) > size:
                 self.neightbors.remove(self.south)
                 self.south = None
         #west  
-        random.seed = str(seed) + str((self.pos[0]-1,self.pos[1])) + str(self.pos)
-        if random.randint(0,1):
+        random.seed(str(seed) + str((self.pos[0]-1,self.pos[1])) + str((self.pos[0],self.pos[1])))
+        if random.randint(0,100) < th:
             self.west = knot(self.pos[0]-1, self.pos[1])
             self.neightbors.append(self.west)
             if self.west.getdist(start) > size:
                 self.neightbors.remove(self.west)
                 self.west = None
-    
         return self.neightbors
 
     def getWalls(self):
@@ -319,19 +325,19 @@ class knot(object):
 
 class generator(object):
 
-    def __init__(self,size=5):
+    def __init__(self,size,seed):
         self.start = knot(0.5,0.5,is_start=True)
         self.size = 5
         self.knots = list()
         self.size = size
         self.walls = list()
         self.grid = Grid()
+        self.seed = seed
 
     def generate(self):
-        seed = time.time()
+        seed = self.seed
         tmp_knots = list()
         tmp_knots.append(self.start)
-        self.knots.append(self.start)
         while tmp_knots:
             knot = tmp_knots.pop()
             self.knots.append(knot)
@@ -339,18 +345,19 @@ class generator(object):
                 a = True
                 for j in self.knots:
                     if i.pos == j.pos:
-                        if i in tmp_knots:
-                            tmp_knots.remove(i)
                         a = False
                 if a:
                     tmp_knots.append(i)
-        self.knots.extend(tmp_knots)
         self.knots.remove(self.start)
-        #self.knots[random.randint(1,len(self.knots))-1].is_goal=True
+        self.knots[random.randint(1,len(self.knots))-1].is_goal=True
         self.knots.append(self.start)
         self.buildWalls()
-        self.reduceWalls()
+        for i in self.walls:
+            print i.p()
+        #self.reduceWalls()
         self.grid.walls = self.walls
+        for i in self.walls:
+            print i.p()
         return self.grid, self.knots
 
     def buildWalls(self):
@@ -358,32 +365,153 @@ class generator(object):
             self.walls.extend(i.getWalls())
       
     def reduceWalls(self):
-        for i in self.walls:
+        a = self.walls[:]
+        for i in a:
             self.walls.remove(i)
+            new = False
+            print("")
+            print("I")
+            i.p()
+            print(i.walldir)
             for j in self.walls:
+                print("j")
+                j.p()
+                print(j.walldir)
                 if i.walldir == j.walldir:
                     if (i.x1,i.y1) == (j.x0,j.y0):
                         self.walls.remove(j)
                         self.walls.append(Wall(i.x0,i.y0,j.x1,j.y1))
+                        new = True
                     elif (i.x1,i.y1) == (j.x1,j.y1):
                         self.walls.remove(j)
                         self.walls.append(Wall(i.x0,i.y0,j.x0,j.y0))
+                        new = True
+            if not new:
+                self.walls.append(Wall(i.x0,i.y0,i.x1,i.y1))
+        print(len(self.walls))
+
+    def print_map(self):
+        a = [["*"for i in range(6*int((self.size+1)))]for j in range(6*int(self.size+1))]
+        for i in self.knots:
+            x = 4+int(self.size-i.pos[1]-0.5)*3
+            y = 4+int(self.size+i.pos[0]-0.5)*3
+            a[x][y] = " "
+            a[x][y] = str(len(i.getNeightbor()))
+            if i.is_start:
+                a[x][y] = "s"
+            if i.is_goal:
+                a[x][y] = "g"
+
+            a[x+1][y+1] = " " 
+            a[x+1][y-1] = " " 
+            a[x-1][y+1] = " " 
+            a[x-1][y-1] = " " 
+
+            # North
+            if i.north == None:
+                a[x-1][y+1] = "-" 
+                a[x-1][y]   = "-"
+                a[x-1][y-1] = "-"
+            else:
+                a[x-1][y]   = " " 
+            
+            #East
+            if i.east == None:
+                a[x+1][y+1] = "|"
+                a[x][y+1]   = "|"
+                a[x-1][y+1] = "|"
+            else:
+                a[x][y+1]   = " "
+            
+            #South
+            if i.south == None:
+                a[x+1][y+1] = "-"
+                a[x+1][y]   = "-"
+                a[x+1][y-1] = "-"
+            else:
+                a[x+1][y]   = " "
+            
+            #West
+            if i.west == None:
+                a[x+1][y-1] = "|"
+                a[x][y-1]   = "|"
+                a[x-1][y-1] = "|"
+            else:
+                a[x][y-1]   = " "
+
+        self.printmat(a)
+
+    def printmat(self,a):
+        for i in range(len(a)):
+            s = ""
+            for j in range(len(a[0])):
+                s += str(a[i][j][0])
+            print(s)
 
 class Walker(object):
 
     def __init__(self, angle, start_knot, knots):
-        self.cur = start_knot
+        self.cur = (0.5,0.5)
+        self.start = start_knot
         self.path = list()
         self.visited = list()
         self.pos = (0.5, 0.5)
         self.angle = angle
         self.knots = knots
-        self.path.append(start_knot)
+        self.goal = self.findgoal()
+        self.path.extend(self.findpath(start_knot))
+        print(self.path)
 
     def move(self):
-        if self.cur == 
-                
+        if self.getdist(self.pos,self.goal.pos) > 0.05:
+            if self.getdist(self.pos,self.path[0]) < 0.05:
+                self.pos = self.path[0]
+                self.cur = self.path.pop(0)
+            dif = (self.cur[0]-self.path[0][0],self.cur[1]-self.path[0][1])
+            if dif[0] != 0:
+                if dif[0] > 0:
+                    nextangle=math.pi
+                else:
+                    nextangle=0.0
+            else:
+                if dif[1] > 0:
+                    nextangle=math.pi*3.0/2.0
+                else:
+                    nextangle=math.pi/2.0
+            if math.fabs(self.angle - nextangle) > 0.01:
+                self.angle = self.angle + (nextangle-self.angle)*0.01
+            else:
+                self.angle= nextangle
+                self.pos = (self.pos[0]-dif[0]*0.003,self.pos[1]-dif[1]*0.003)
+            return True
 
+        return False
+               
+    def findgoal(self):
+        goal = None
+        for i in self.knots:
+            if i.is_goal:
+                goal = i
+        return goal
+
+    def findpath(self,knot):
+        if self.visited.count(knot.pos) > 0:
+            return list()
+        path = list()
+        self.visited.append(knot.pos)
+        path.append(knot.pos)
+        knot.gen(self.start,SEED,SIZE)
+        for i in knot.getNeightbor():
+            if self.visited.count(i.pos) == 0:
+                path.extend(self.findpath(i))
+                path.append(knot.pos)
+        return path
+
+    def getdist(self,(ax,ay),(bx,by)):
+        distx = ax - bx
+        disty = ay - by
+        return math.sqrt(distx**2 + disty**2)
+    
     def getpos(self):
         return self.pos[0], self.pos[1] ,self.angle
 
