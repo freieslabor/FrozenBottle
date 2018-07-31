@@ -6,6 +6,7 @@ import sys
 import time
 import LedClientBase
 import random
+import noncanon_input
 
 DEFAULT_PORT = 8901
 
@@ -25,31 +26,33 @@ except NameError:
 
 def main(args):
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument("address",type=str,help="UDP address")
-	parser.add_argument("-p","--port",type=int,help="UDP port number")
-	aa = parser.parse_args()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("address",type=str,help="UDP address")
+        parser.add_argument("-p","--port",type=int,help="UDP port number")
+        aa = parser.parse_args()
         print(aa)
-	port = DEFAULT_PORT
-	address = "127.0.0.1"
-	if aa.port is not None:
-	    port = aa.port
+        port = DEFAULT_PORT
+        address = "127.0.0.1"
+        if aa.port is not None:
+                port = aa.port
 
-	if port<=0 or port==0xFFFF:
-	    sys.stderr.write("bad port number %u\n"%port)
-	    return 1
+        if port<=0 or port==0xFFFF:
+                sys.stderr.write("bad port number %u\n"%port)
+                return 1
 
-	if aa.address is not None:
-	    address = aa.address
+        if aa.address is not None:
+                address = aa.address
 
-	if not LedClientBase.connect(address,port):
-	    return 1
+        if not LedClientBase.connect(address,port):
+                return 1
 
         gen = generator(SIZE,SEED)
         grid, knots = gen.generate()
         gen.print_map()
+        io = noncanon_input.cio()
         w = Walker(math.pi, gen.start, knots)
-        v = Viewer(resX=27,resY=27)
+        w = InteractiveWalker(io, gen.start, gen.walls)
+        v = Viewer(resX=27,resY=27,fow=2.2)
 
 	while w.move():
 
@@ -223,7 +226,7 @@ class Viewer(object):
 				walldir = wall.walldir
 				if side:
 					walldir += math.pi
-				r,g,b = LedClientBase.hsv2rgb_float( walldir/(2.0*math.pi) , 0.8 
+				r,g,b = LedClientBase.hsv2rgb_float( ((walldir+0.3)/(2.0*math.pi))%1.0 , 0.8 
                                         , 1.0/max(1.0,2.0*math.pow(dist,0.8)) )
 				color = int(r*255.0+0.5) + int(g*255.0+0.5)*0x0100 + int(b*255.0+0.5)*0x010000
 			else:
@@ -478,8 +481,9 @@ class Walker(object):
                     nextangle=math.pi*3.0/2.0
                 else:
                     nextangle=math.pi/2.0
-            if math.fabs(self.angle - nextangle) > 0.01:
-                self.angle = self.angle + (nextangle-self.angle)*0.01
+            adif = clampangle(nextangle-self.angle)
+            if math.fabs(adif) > 0.01:
+                self.angle = self.angle + adif*0.01
             else:
                 self.angle= nextangle
                 self.pos = (self.pos[0]-dif[0]*0.003,self.pos[1]-dif[1]*0.003)
@@ -532,6 +536,85 @@ class Walker(object):
 #			return ( 2.5 , 5.5-4.0*s , math.pi*1.5 )
 #		s-=1.0
 #		return ( 2.5 , 1.5 , math.pi*(1.5-s) )
+
+
+class InteractiveWalker(object):
+
+    def __init__(self, io, start_knot, list_of_walls):
+        self.curknot = start_knot
+        self.walllist = list_of_walls
+#        self.visited = list()
+        self.pos = tuple(self.curknot.pos)
+        self.angle = 0.0
+        self.io = io
+
+    def move(self):
+        inp = self.io.getch()
+        if inp=="\x1b[D": # left
+                self.angle = clampangle(self.angle+0.1)
+        if inp=="\x1b[C": # right
+                self.angle = clampangle(self.angle-0.1)
+        if inp=="\x1b[A" or inp=="\x1b[B": # up or down
+                _spd = 0.1
+                if inp=="\x1b[B":
+                        _spd = -0.075
+                np = ( self.pos[0]+math.cos(self.angle)*_spd , self.pos[1]+math.sin(self.angle)*_spd )
+                self._moveto(np)
+                #bestcp = None
+                #bestd = 0.0
+                for wl in self.walllist:
+                        cp = closepoint_point_line(np,(wl.x0,wl.y0),(wl.x1,wl.y1))
+                        poscor = correct_position(self.pos,cp,0.333)
+                #        _d = (cp[0]-self.pos[0],cp[1]-self.pos[1])
+                #        linlen = math.sqrt(_d[0]*_d[0]+_d[1]*_d[1])
+                #        if bestcp is None or linlen<bestd:
+                #                bestcp = cp; bestd=linlen
+                        if poscor is not None:
+                                self.pos = poscor
+                #if bestcp:
+                #        print (repr(bestcp))
+
+
+        return True
+
+    def _moveto(self,to):
+        self.pos = to
+               
+    def findgoal(self):
+    	return None
+
+    def getpos(self):
+        return self.pos[0], self.pos[1] ,self.angle
+
+""" from poitn 'pt', find closest point on line, return that. """
+def closepoint_point_line(pt,lin0,lin1):
+        d = (lin1[0]-lin0[0],lin1[1]-lin0[1])
+        linlen = math.sqrt(d[0]*d[0]+d[1]*d[1])
+        if linlen<1.0e-9:
+                return lin0
+        dn = (d[0]/linlen,d[1]/linlen)
+        q = (pt[0]-lin0[0])*dn[0] + (pt[1]-lin0[1])*dn[1]  # point along length of line.
+        q = min(linlen,max(0.0,q))
+        return ( lin0[0]+q*dn[0] , lin0[1]+q*dn[1] )
+
+""" correct a position to not get too close to point 'cp'. return correction vector or None. """
+def correct_position(pos,cp,rad):
+        d = (cp[0]-pos[0],cp[1]-pos[1])
+        linlen = math.sqrt(d[0]*d[0]+d[1]*d[1])
+        if linlen>=rad or linlen<1.0e-6:
+                return None
+        _scal = rad/linlen
+        return (cp[0]-d[0]*_scal,cp[1]-d[1]*_scal)
+
+
+
+
+def clampangle(ang):
+    if ang<-math.pi:
+        ang += 2*math.pi
+    elif ang>math.pi:
+        ang -= 2*math.pi
+    return ang
 
 if __name__=="__main__":
     sys.exit(main(sys.argv[1:]))
