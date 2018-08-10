@@ -52,7 +52,7 @@ def main(args):
         io = noncanon_input.cio()
         w = Walker(math.pi, gen.start, knots)
         w = InteractiveWalker(io, gen.start, gen.walls)
-        v = Viewer(resX=27,resY=27,fow=2.2)
+        v = Viewer(resX=27,resY=27,fow=2.5)
 
 	while w.move():
 
@@ -538,6 +538,11 @@ class Walker(object):
 #		return ( 2.5 , 1.5 , math.pi*(1.5-s) )
 
 
+WALKSPEED = 0.1
+ROTSPEED = 0.1
+WALK_DECAY = 0.1
+ROT_DECAY = 0.1
+
 class InteractiveWalker(object):
 
     def __init__(self, io, start_knot, list_of_walls):
@@ -547,44 +552,65 @@ class InteractiveWalker(object):
         self.pos = tuple(self.curknot.pos)
         self.angle = 0.0
         self.io = io
+        self.vel = (0.0,0.0)
+        self.rotspeed = 0.0
+        self.idle = 0.0
+
 
     def move(self):
+        dt = 1.0    # remove. make this an argument.
         inp = self.io.getch()
         if inp=="\x1b[D": # left
-                self.angle = clampangle(self.angle+0.1)
+                self.rotspeed = 0.02
         if inp=="\x1b[C": # right
-                self.angle = clampangle(self.angle-0.1)
-        if inp=="\x1b[A" or inp=="\x1b[B": # up or down
-                _spd = 0.1
-                if inp=="\x1b[B":
-                        _spd = -0.075
-                np = ( self.pos[0]+math.cos(self.angle)*_spd , self.pos[1]+math.sin(self.angle)*_spd )
-                self._moveto(np)
-                #bestcp = None
-                #bestd = 0.0
-                for wl in self.walllist:
-                        cp = closepoint_point_line(np,(wl.x0,wl.y0),(wl.x1,wl.y1))
-                        poscor = correct_position(self.pos,cp,0.333)
-                #        _d = (cp[0]-self.pos[0],cp[1]-self.pos[1])
-                #        linlen = math.sqrt(_d[0]*_d[0]+_d[1]*_d[1])
-                #        if bestcp is None or linlen<bestd:
-                #                bestcp = cp; bestd=linlen
-                        if poscor is not None:
-                                self.pos = poscor
-                #if bestcp:
-                #        print (repr(bestcp))
+                self.rotspeed = -0.02
+        self.angle = clampangle(self.angle+self.rotspeed*dt)
 
+        self.idle = (self.idle+0.0025)%1.0
+
+        _spd = 0.02  # speed of movement  ..... constant here??
+        q1 = 0.2*dt     # factor for e^-x curve
+        q0 = 1.0-q1   # use these as:  gradual_newval = (currentval*q0 + targetval*q1)
+        if inp=="\x1b[A" or inp=="\x1b[B": # up or down
+                newvel = ( math.cos(self.angle)*_spd , math.sin(self.angle)*_spd )
+                if inp=="\x1b[B": # backward?
+                        newvel = (newvel[0]*-0.5,newvel[1]*-0.5)
+                # apply new speed instantly.
+                self.vel = newvel
+                # apply new speed gradually.
+                #self.vel = ( self.vel[0]*q0+newvel[0]*q1 , self.vel[1]*q0+newvel[1]*q1 )
+
+        # move according to speed vector
+        newpos = ( self.pos[0]+self.vel[0]*dt , self.pos[1]+self.vel[1]*dt )
+
+        self.pos = newpos
+        #bestcp = None
+        #bestd = 0.0
+        for wl in self.walllist:
+                cp = closepoint_point_line(newpos,(wl.x0,wl.y0),(wl.x1,wl.y1))
+                poscor = correct_position(self.pos,cp,0.333)
+                if poscor is not None:
+                        self.pos = poscor
+                        newpos = poscor
+                        # todo: need to change speed-vector?
+        #if bestcp:
+        #        print (repr(bestcp))
+
+        # damp speed and rotspeed
+        q0 = (1.0-0.05*dt)  # factor for e^-x curve
+        self.vel = (self.vel[0]*q0,self.vel[1]*q0)
+        self.rotspeed = self.rotspeed * q0
 
         return True
 
-    def _moveto(self,to):
-        self.pos = to
-               
     def findgoal(self):
     	return None
 
     def getpos(self):
-        return self.pos[0], self.pos[1] ,self.angle
+        x,y = self.pos[0], self.pos[1]
+        x += math.cos(self.idle*math.pi*2)*0.025
+        y += math.sin(self.idle*math.pi*2)*0.025
+        return x, y ,self.angle
 
 """ from poitn 'pt', find closest point on line, return that. """
 def closepoint_point_line(pt,lin0,lin1):
@@ -608,7 +634,7 @@ def correct_position(pos,cp,rad):
 
 
 
-
+""" clamp an angle to a value of -pi to pi, by adding/subtracting 2*pi. """
 def clampangle(ang):
     if ang<-math.pi:
         ang += 2*math.pi
