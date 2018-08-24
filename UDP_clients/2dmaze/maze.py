@@ -76,6 +76,7 @@ class World(object):
         # try all entities
         bestedist=-1.0
         bestehit=None
+#        print "DEBUG:   (%.1f/%.1f)  (%.1f/%.1f)" % (self.entities[0].x,self.entities[0].y,self.entities[1].x,self.entities[1].y)
         for ent in self.entities:
             dist = ent.hit(startX,startY,dx,dy)
             if dist is None:
@@ -90,7 +91,7 @@ class World(object):
             return None, None, None, enthit
         return besthit,bestdist,bestside,enthit
 
-ENTRAD=0.17
+ENTRAD=0.095
 
 class Entity(object):
     __slots__ = ("world","x","y")
@@ -102,11 +103,14 @@ class Entity(object):
         if self not in world.entities:
             world.entities.append(self)
 
-    def __del__(self):
-        try:
-            self.world.entities.remove(self)
-        except ValueError,ex:
-            pass
+    def destroy(self):
+        if self.world is not None:
+            try:
+                self.world.entities.remove(self)
+            except ValueError,ex:
+                pass
+        self.world = None
+
 
     def get_pos(self):
         return (self.x,self.y)

@@ -22,7 +22,7 @@ TIMESTEP = 0.005
 
 PRIMITIVEWALK_STEP_SIZE = 0.005
 
-SIZE = 3
+SIZE = 2
 
 SEED = int(time.time())
 
@@ -68,16 +68,22 @@ def main(args):
 
     # create walker. either the interactive, or the automatic.
 
-    #w = Walker(grid, math.pi, gen.start, knots)
+    w = Walker(grid, math.pi, gen.start, knots)
     w = InteractiveWalker(grid, io, gen.start, gen.walls)
 
-
     v = Viewer(resX=27,resY=28,fow=2.5)
+    gametime = 0.0
+    nextspawn = 2.0
     while True:
 
         # move all entities.
         for ent in grid.entities:
             ent.step(TIMESTEP)
+        if gametime>=nextspawn:
+            nextspawn += 2.5
+            Walker(grid, math.pi, gen.start, knots)
+            print "DEBUG: spawned new walker. number of entities: "+repr(len(grid.entities))
+        gametime = gametime + TIMESTEP
 
 
         x,y,r = w.getpos()
@@ -125,9 +131,10 @@ def meancol_of_4(col_tup):
 
 
 WALL_H = 1.0
+VIS_H = 0.6    # eye height.
 
 class Viewer(object):
-    __slots__=("posX","posY","angle","fow","resX","resY","gfxmatrix")
+    __slots__=("posX","posY","angle","fow","resX","resY","gfxmatrix","_wdd")
     def __init__(self,fow=math.pi/2.0,resX=28,resY=28):
         self.posX = 0.0
         self.posY = 0.0
@@ -136,6 +143,9 @@ class Viewer(object):
         self.resX = resX
         self.resY = resY
         self.gfxmatrix = [0]*(self.resX*self.resY)
+        # wdd variable is needed to transform distances to visual hight.
+        # with of  orthogonal sampling edge. depends on fow.
+        self._wdd = 0.5*math.sqrt( (math.cos(self.fow)-1.0)**2 + (math.sin(self.fow))**2 )
 
     def new_pos(self,x,y,angle=None):
         self.posX=x
@@ -147,34 +157,52 @@ class Viewer(object):
         hits = self.view_calc_hits(grid)
 
         x = 0
-        for (h,col,walldir,enthit) in hits:
+        for (_dst,col,walldir,enthit) in hits:
+
+            #zero-out the column
+            for y in xrange(0,self.resY):
+                self.gfxmatrix[x+self.resX*y] = 0
+
 
             if col is None:
                 col = 0
                 # have hit a wall here.
 
-            # make y-range
-            y0 = int( self.resY * (0.5 - h*0.5) + 0.5 )
-            y1 = int( self.resY * (0.5 + h*0.5) + 0.5 )
-            y0 = max(0,y0)
-            y1 = min(self.resY,y1)
+            if _dst is not None:
+                h0 = self.transform_Y( _dst ,    0.0-VIS_H )
+                h1 = self.transform_Y( _dst , WALL_H-VIS_H )
 
-            # fill in
-            for y in xrange(0,y0):
-                self.gfxmatrix[x+self.resX*y] = 0
-            for y in xrange(y0,y1):
-                self.gfxmatrix[x+self.resX*y] = col
-            for y in xrange(y1,self.resY):
-                self.gfxmatrix[x+self.resX*y] = 0
+                # calc y-range
+                y0 = int( self.resY * (0.5 + h0*0.5) + 0.5 )
+                y1 = int( self.resY * (0.5 + h1*0.5) + 0.5 )
+                y0 = max(0,y0)
+                y1 = min(self.resY,y1)
+
+                # fill in gfx buffer
+                for y in xrange(y0,y1):
+                    self.gfxmatrix[x+self.resX*y] = col
 
             if enthit is not None:
                 _ent,_dist = enthit
                 #if _ent.x == self.posX and _ent.y==self.posY:
                 #    continue
-                y = int( self.resY * (0.5) + 0.5 )
-                if y>=0 and y<self.resY:
+#                y = int( self.resY * (0.5) + 0.5 )
+#                if y>=0 and y<self.resY:
+#                    self.gfxmatrix[x+self.resX*y] = 0xEEEEEE
+
+                h0 = self.transform_Y( _dist ,    0.0-VIS_H )
+                h1 = self.transform_Y( _dist ,    0.6-VIS_H )   # visual height of entities. constant here?
+
+                # calc y-range
+                y0 = int( self.resY * (0.5 + h0*0.5) + 0.5 )
+                y1 = int( self.resY * (0.5 + h1*0.5) + 0.5 )
+                y0 = max(0,y0)
+                y1 = min(self.resY,y1)
+
+                # fill in gfx buffer
+                for y in xrange(y0,y1):
                     self.gfxmatrix[x+self.resX*y] = 0xEEEEEE
-    
+
 
             x+=1
 
@@ -190,18 +218,17 @@ class Viewer(object):
         # orthogonal step, to be added multiple times to the view-vector.
         qsx = -vy
         qsy = vx
-        # with of  orthogonal sampling edge. depends on fow.
-        wdd = 0.5*math.sqrt( (math.cos(self.fow)-1.0)**2 + (math.sin(self.fow))**2 )
-        #print("DEBUG: wdd = %f"%wdd)
+        #print("DEBUG: _wdd = %f"%self._wdd)
         for i in xrange(self.resX):
             q = i/float(self.resX-1) - 0.5  # -1 .. 1
             q = -q ## lieber von links nach rechts.
             # sample view
-            wall,dist,side,enthit = grid.look_dir( self.posX , self.posY , vx+qsx*wdd*q , vy+qsy*wdd*q )
+            wall,dist,side,enthit = grid.look_dir( self.posX , self.posY , vx+qsx*self._wdd*q , vy+qsy*self._wdd*q )
             #print(wall,dist)
             if wall:
                 # see a wall
-                vis_height = WALL_H / (dist*wdd)
+                vis_height = WALL_H / (dist*self._wdd)
+
                 walldir = wall.walldir
                 if side:
                     walldir += math.pi
@@ -212,8 +239,8 @@ class Viewer(object):
                 # looking into the void.
                 walldir = 0.0
                 color = None
-                vis_height = 0.0
-            res.append((vis_height,color,walldir,enthit))
+                dist = None
+            res.append((dist,color,walldir,enthit))
         return res
 
     def debug_ascii_print(self):
@@ -229,6 +256,12 @@ class Viewer(object):
                     let = 25*r/255.0
                     lin = lin+chr(ord('A')+int(let))
             print(lin)
+
+    def transform_Y(self,distance,y_3d):
+        """ transform vertical coordinate to screen coordinate. Result in range -1 .. 1 is in screen height. """
+        return y_3d / (distance*self._wdd)
+
+
 
 class generator(object):
 
@@ -368,16 +401,21 @@ class Walker(maze.Entity):
         self.knots = knots
         self.goal = self.findgoal()
         self.path.extend(self.findpath(start_knot))
+        self.done = False
         print(self.path)
 
     def step(self,dt):
-        self.move()
+        if not self.move():
+            self.destroy()
+            return
+        self.x,self.y = self.pos
 
     def move(self):
         if self.getdist(self.pos,self.goal.pos) > 0.05:
             if self.getdist(self.pos,self.path[0]) < 0.05:
                 self.pos = self.path[0]
                 self.cur = self.path.pop(0)
+                print "now at "+repr(self.pos)
             dif = (self.cur[0]-self.path[0][0],self.cur[1]-self.path[0][1])
             if dif[0] != 0:
                 if dif[0] > 0:
@@ -391,7 +429,7 @@ class Walker(maze.Entity):
                     nextangle=math.pi/2.0
             adif = clampangle(nextangle-self.angle)
             if math.fabs(adif) > 0.01:
-                self.angle = self.angle + adif*0.01
+                self.angle = self.angle + adif*0.1   # rotation speed here.
             else:
                 self.angle= nextangle
                 self.pos = (self.pos[0]-dif[0]*0.003,self.pos[1]-dif[1]*0.003)
@@ -513,6 +551,7 @@ class InteractiveWalker(maze.Entity):
         self.vel = (self.vel[0]*q0,self.vel[1]*q0)
         self.rotspeed = self.rotspeed * q0
 
+        self.x,self.y = self.pos
         return True
 
     def findgoal(self):
