@@ -30,12 +30,12 @@ for i in xrange(256):
 //#define WINDOW_GFX_WIDTH 1056
 //#define WINDOW_GFX_HEIGHT 950
 
-#define STEP_X 30
-#define STEP_Y 26
-#define WINDOW_GFX_WIDTH 850
-#define WINDOW_GFX_HEIGHT 750
+#define STEP_X 15
+#define STEP_Y 14
+#define WINDOW_GFX_WIDTH 430
+#define WINDOW_GFX_HEIGHT 400
 
-#define HEX_TEX_SIZE 128
+#define HEX_TEX_SIZE 64
 
 /*
 #!/usr/bin/python
