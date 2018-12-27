@@ -10,9 +10,9 @@ import noncanon_input
 
 DEFAULT_PORT = 8901
 
-TIMESTEP = 0.003
+TIMESTEP = 0.0003
 
-PRIMITIVEWALK_STEP_SIZE = 0.005
+PRIMITIVEWALK_STEP_SIZE = 0.0005
 
 SIZE = 3
 
@@ -49,9 +49,9 @@ def main(args):
     gen = generator(SIZE,SEED)
     grid, knots = gen.generate()
     gen.print_map()
-    io = noncanon_input.cio()
+    #io = noncanon_input.cio()
     w = Walker(math.pi, gen.start, knots)
-    w = InteractiveWalker(io, gen.start, gen.walls)
+    #w = InteractiveWalker(io, gen.start, gen.walls)
     v = Viewer(resX=27,resY=28,fow=2.5)
     while w.move():
         x,y,r = w.getpos()
@@ -239,7 +239,7 @@ class Viewer(object):
                 if side:
                     walldir += math.pi
                 r,g,b = LedClientBase.hsv2rgb_float( ((walldir+0.3)/(2.0*math.pi))%1.0 , 0.8 
-                                        , 1.0/max(1.0,2.0*math.pow(dist,0.8)) )
+                                        , 1.0/max(1.0,2.0*math.pow(dist,0.5)) )
                 color = int(r*255.0+0.5) + int(g*255.0+0.5)*0x0100 + int(b*255.0+0.5)*0x010000
             else:
                 # looking into the void.

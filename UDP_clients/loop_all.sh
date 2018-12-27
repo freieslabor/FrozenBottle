@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IP="192.168.4.142"
+IP="10.42.0.25"
 #IP="127.0.0.1"
 PORT=""
 DURATION=15.0
@@ -8,8 +8,8 @@ DURATION=15.0
 animNumb=7
 
 declare -a arr=(
-"2dmaze.py"
 #"blue.py"
+"ddmaze.py"
 "colorFlow.py"
 # braucht arguzment "colorText.py"
 "colorWheel.py"
@@ -17,7 +17,7 @@ declare -a arr=(
 #"game_of_hive.py"
 #"gif_scroll.py"
 #"hex.py"
-"maze.py"
+#"maze.py"
 #"mrburns.py"
 #"photo.py"
 "plasma.py"

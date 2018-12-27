@@ -15,8 +15,8 @@ ORIGIN_X = 6*2+1
 ORIGIN_Y = 6*2+1
 SCALE_X = 0.5
 SCALE_Y = 0.5*math.cos(30*math.pi/180.0)
-TIMESTEP = 0.0055
-ROTSPEED = 4 # rotations/sec
+TIMESTEP = 0.0001
+ROTSPEED = 8 # rotations/sec
 
 def main(args):
 
@@ -85,11 +85,11 @@ def color_calc_func_3(frameNo,seq_id,xx,yy):
 	if ang<0.5:
 		ang = ang*2.0
 		ang = 1.0-ang
-		return (ang*0.2,ang*1.0,ang*0.4)
+		return (ang*1.0,ang*0.2,ang*0.4)
 	else:
 		ang = (ang-0.5)*2.0
 		ang = 1.0-ang
-		return (ang*0.9,ang*0.9,ang*0.1)
+		return (ang*0.1,ang*1.0,ang*0.1)
 
 
 
