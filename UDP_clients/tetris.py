@@ -182,7 +182,7 @@ class game(object):
 				self.brk.render(True)
 				self.next_bdef = self.pickbrick()
 				#print "added new brick"
-			except Exception,ex:
+			except Exception:
 				# cannot spawn new brick. game lost.
 				self.state=2
 				return
@@ -268,7 +268,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-	print repr(aa)
+	#print repr(aa)
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
