@@ -135,7 +135,7 @@ class brick(object):
 
 
 class game(object):
-	__slots__ = ('field','brk','state','speed','delay','fulllines','score','next_bdef')
+	__slots__ = ('field','brk','state','delayp','delay','fulllines','score','next_bdef')
 	# states: 0=normal, 1=flash lines, 2=gameover
 	def __init__(self,field):
 		if not isinstance(field,hex.HexBuff):
@@ -143,7 +143,7 @@ class game(object):
 		self.field = field
 		self.brk = None
 		self.state = 0
-		self.speed = 6000
+		self.delayp = 6000
 		self.delay = 0
 		self.fulllines = None
 		self.score = 0
@@ -201,7 +201,7 @@ class game(object):
 		# process auto-movedown
 		self.delay-=1000
 		if self.delay<=0:
-			self.delay += self.speed
+			self.delay += self.delayp
 			self.brk.render(False)
 			res = self.brk.slide_down(0)
 			self.brk.render(True)
@@ -216,6 +216,7 @@ class game(object):
 					self.state = 1
 					fl = len(self.fulllines)
 					self.score += fl+fl
+                                        self.delayp *= 0.98
 					highlight_lines(self.field,self.fulllines)
 					return
 
@@ -225,7 +226,8 @@ class game(object):
 		if self.delay>0:
 			return
 		move_down_rest(self.field,self.fulllines)
-		self.delay = self.speed
+		self.delay = self.delayp
+
 		self.state = 0
 
 	def step2(self,inp):
