@@ -153,6 +153,8 @@ class game(object):
 		for x in xrange(2,13,1):
 			self.field.set_wh(x,2,2)
 
+        def resetspeedp(self):
+            self.speedp = 6000
 	def pickbrick(self):
 		return all_brickdefs[random.randint(0,len(all_brickdefs)-1)]
 
@@ -234,7 +236,7 @@ class game(object):
 		# game over
 		if inp in (" ","\n","\r"):
 			self.delay=0
-			clearboard(self.field)
+			clearboard(self.field, self)
 			self.state=0
 
 	def step3(self,inp):
@@ -386,12 +388,13 @@ def mix_col_liness(lin1,lin2,fac1,fac2):
 		res.append( chr((ord(p1[0])*fac1+ord(p2[0])*fac2)//sm) + chr((ord(p1[1])*fac1+ord(p2[1])*fac2)//sm) + chr((ord(p1[2])*fac1+ord(p2[2])*fac2)//sm) )
 	return "".join(res)
 
-def clearboard(field):
+def clearboard(field,game):
+        game.resetspeedp()
 	for h in xrange(field.h):
 		for w in xrange(field.w):
 			if field.get_wh(w,h) is not None:
 				field.set_wh(w,h,0)
-
+                                
 
 if __name__=="__main__":
 	sys.exit(main(sys.argv[1:]))
