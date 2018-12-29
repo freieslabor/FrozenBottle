@@ -27,28 +27,87 @@ GRID = [
     [  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13],
 ]
 
+BLACK = bytearray([0, 0, 0])
+RED = bytearray([255, 0, 0])
+
 
 class Client:
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.address = (host, port)
         self.clear()
+        self.sprites = []
 
     def clear(self):
-        self.buffer = bytearray([0, 0, 0] * TOTAL_LEDS)
+        self.buffer = BLACK * TOTAL_LEDS
 
     def set(self, x, y, r, g, b):
         index = GRID[y][x]
         self.buffer[index*3:index*3+3] = r, g, b
 
+    def write_sprites(self):
+        self.clear()
+
+        for sprite in self.sprites:
+            for x in range(sprite.x):
+                for y in range(sprite.y):
+                    colors = sprite.get(x, y)
+
+                    # skip black pixels
+                    if not colors > BLACK:
+                        continue
+
+                    sprite_x = x + sprite.offset_x
+                    sprite_y = y + sprite.offset_y
+
+                    if y % 2 == 0 and not sprite_y % 2 == 0:
+                        sprite_x += 1
+
+                    self.set(sprite_x, sprite_y, *colors)
+
     def flush(self, interval=None):
         def _flush():
+            self.write_sprites()
             self.socket.sendto(self.buffer, self.address)
 
         if interval:
             while True:
                 _flush()
                 time.sleep(interval)
+
+
+class Sprite:
+    def __init__(self, x=3, y=3, offset_x=0, offset_y=0):
+        self.x = x
+        self.y = y
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+
+        self.data = bytearray([0, 0, 255] * self.x * self.y)
+
+    def get(self, x, y):
+        i1 = (x + (y * self.x)) * 3
+        i2 = i1 + 3
+
+        return self.data[i1:i2]
+
+    def set(self, x, y, r=0, g=0, b=0):
+        i1 = (x + (y * self.x)) * 3
+        i2 = i1 + 3
+
+        self.data[i1:i2] = [r, g, b]
+
+    def move_left(self):
+        self.offset_x -= 1
+
+    def move_right(self):
+        self.offset_x += 1
+
+    def move_down(self):
+        self.offset_y += 1
+
+    def move_up(self):
+        self.offset_y -= 1
 
 
 class WorkerPool:
@@ -75,45 +134,48 @@ class WorkerPool:
 
         return await future
 
+class Keyboard:
+    def __init__(self):
+        self.running = True
 
-def arrow_keys(left=lambda: None, right=lambda: None, up=lambda: None,
-               down=lambda: None):
+    def capture(self, left=lambda: None, right=lambda: None, up=lambda: None,
+                down=lambda: None):
 
-    # get the curses screen window
-    curses.filter()
-    screen = curses.initscr()
+        # get the curses screen window
+        curses.filter()
+        screen = curses.initscr()
 
-    # turn off input echoing
-    curses.noecho()
+        # turn off input echoing
+        curses.noecho()
 
-    # respond to keys immediately (don't wait for enter)
-    curses.cbreak()
+        # respond to keys immediately (don't wait for enter)
+        curses.cbreak()
 
-    # map arrow keys to special values
-    screen.keypad(True)
+        # map arrow keys to special values
+        screen.keypad(True)
 
-    try:
-        while True:
-            char = screen.getch()
+        try:
+            while self.running:
+                char = screen.getch()
 
-            if char == ord('q'):
-                break
+                if char == ord('q'):
+                    break
 
-            elif char == curses.KEY_RIGHT:
-                right()
+                elif char == curses.KEY_RIGHT:
+                    right()
 
-            elif char == curses.KEY_LEFT:
-                left()
+                elif char == curses.KEY_LEFT:
+                    left()
 
-            elif char == curses.KEY_UP:
-                up()
+                elif char == curses.KEY_UP:
+                    up()
 
-            elif char == curses.KEY_DOWN:
-                down()
+                elif char == curses.KEY_DOWN:
+                    down()
 
-    finally:
-        # shut down cleanly
-        curses.nocbreak()
-        screen.keypad(0)
-        curses.echo()
-        curses.endwin()
+        finally:
+            # shut down cleanly
+            curses.nocbreak()
+            screen.keypad(0)
+            curses.echo()
+            curses.endwin()
