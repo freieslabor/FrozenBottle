@@ -29,6 +29,13 @@ GRID = [
 
 BLACK = bytearray([0, 0, 0])
 RED = bytearray([255, 0, 0])
+BLUE = bytearray([0, 0, 255])
+
+DEFAULT_PALETTE = [
+    [0, 0, 0],
+    [255, 0, 0],
+    [0, 0, 255],
+]
 
 
 class Client:
@@ -53,15 +60,23 @@ class Client:
                 for y in range(sprite.y):
                     colors = sprite.get(x, y)
 
-                    # skip black pixels
+                    # skip black pixel
                     if not colors > BLACK:
                         continue
 
                     sprite_x = x + sprite.offset_x
                     sprite_y = y + sprite.offset_y
 
+                    # x correction on shorter lines
                     if y % 2 == 0 and not sprite_y % 2 == 0:
                         sprite_x += 1
+
+                    # handle out of bounds pixel
+                    if sprite_y < 0 or sprite_y >= len(GRID):
+                        continue
+                    
+                    if sprite_x < 0 or sprite_x >= len(GRID[sprite_y]):
+                        continue
 
                     self.set(sprite_x, sprite_y, *colors)
 
@@ -77,13 +92,23 @@ class Client:
 
 
 class Sprite:
-    def __init__(self, x=3, y=3, offset_x=0, offset_y=0):
-        self.x = x
-        self.y = y
+    def __init__(self, spec='', palette=DEFAULT_PALETTE, offset_x=0,
+                 offset_y=0):
+
         self.offset_x = offset_x
         self.offset_y = offset_y
 
-        self.data = bytearray([0, 0, 255] * self.x * self.y)
+        self.spec = [i.replace(' ', '') for i in spec.splitlines() if i]
+
+        self.x = len(self.spec[0])
+        self.y = len(self.spec)
+
+        data = []
+        for line in self.spec:
+            for i in line:
+                data += DEFAULT_PALETTE[int(i)]
+
+        self.data = bytearray(data)
 
     def get(self, x, y):
         i1 = (x + (y * self.x)) * 3
@@ -96,18 +121,6 @@ class Sprite:
         i2 = i1 + 3
 
         self.data[i1:i2] = [r, g, b]
-
-    def move_left(self):
-        self.offset_x -= 1
-
-    def move_right(self):
-        self.offset_x += 1
-
-    def move_down(self):
-        self.offset_y += 1
-
-    def move_up(self):
-        self.offset_y -= 1
 
 
 class WorkerPool:

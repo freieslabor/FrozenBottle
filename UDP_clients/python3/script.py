@@ -4,29 +4,23 @@ import IPython
 from py3_client import Client, WorkerPool, Sprite, Keyboard
 
 client = Client()
-sprite = Sprite()
-keyboard = Keyboard()
 
+sprite = Sprite(spec="""
+2 2 0
+2 1 2
+2 2 0
+""")
+
+
+keyboard = Keyboard()
 client.sprites.append(sprite)
 
 loop = asyncio.get_event_loop()
 worker_pool = WorkerPool(loop=loop)
 
 
-def left():
-    sprite.move_left()
-
-def right():
-    sprite.move_right()
-
-def up():
-    sprite.move_up()
-
-def down():
-    sprite.move_down()
 
 loop.create_task(worker_pool.run(client.flush, interval=0.2))
-#loop.create_task(worker_pool.run(keyboard.capture, left=left, right=right, up=up, down=down))
 
 
 
@@ -36,16 +30,16 @@ from pynput import keyboard
 
 def on_press(key):
     if key == Key.up:
-        sprite.move_up()
+        sprite.offset_y -= 1
 
     if key == Key.down:
-        sprite.move_down()
+        sprite.offset_y += 1
 
     if key == Key.left:
-        sprite.move_left()
+        sprite.offset_x -= 1
 
     if key == Key.right:
-        sprite.move_right()
+        sprite.offset_x += 1
 
 
 def foo():
