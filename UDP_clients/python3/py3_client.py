@@ -27,76 +27,21 @@ GRID = [
     [  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13],
 ]
 
-BLACK = bytearray([0, 0, 0])
-RED = bytearray([255, 0, 0])
-BLUE = bytearray([0, 0, 255])
-
 DEFAULT_PALETTE = [
     [0, 0, 0],
     [255, 0, 0],
     [0, 0, 255],
+    [0, 255, 255],
+    [255, 255, 0],
 ]
 
-
-class Client:
-    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.address = (host, port)
-        self.clear()
-        self.sprites = []
-
-    def clear(self):
-        self.buffer = BLACK * TOTAL_LEDS
-
-    def set(self, x, y, r, g, b):
-        index = GRID[y][x]
-        self.buffer[index*3:index*3+3] = r, g, b
-
-    def write_sprites(self):
-        self.clear()
-
-        for sprite in self.sprites:
-            for x in range(sprite.x):
-                for y in range(sprite.y):
-                    colors = sprite.get(x, y)
-
-                    # skip black pixel
-                    if not colors > BLACK:
-                        continue
-
-                    sprite_x = x + sprite.offset_x
-                    sprite_y = y + sprite.offset_y
-
-                    # x correction on shorter lines
-                    if y % 2 == 0 and not sprite_y % 2 == 0:
-                        sprite_x += 1
-
-                    # handle out of bounds pixel
-                    if sprite_y < 0 or sprite_y >= len(GRID):
-                        continue
-                    
-                    if sprite_x < 0 or sprite_x >= len(GRID[sprite_y]):
-                        continue
-
-                    self.set(sprite_x, sprite_y, *colors)
-
-    def flush(self, interval=None):
-        def _flush():
-            self.write_sprites()
-            self.socket.sendto(self.buffer, self.address)
-
-        if interval:
-            while True:
-                _flush()
-                time.sleep(interval)
-
-
 class Sprite:
-    def __init__(self, spec='', palette=DEFAULT_PALETTE, offset_x=0,
-                 offset_y=0):
+    def __init__(self, spec='', palette=DEFAULT_PALETTE, collision_check=True,
+            offset_x=0, offset_y=0):
 
         self.offset_x = offset_x
         self.offset_y = offset_y
+        self.collision_check=collision_check
 
         self.spec = [i.replace(' ', '') for i in spec.splitlines() if i]
 
@@ -106,7 +51,7 @@ class Sprite:
         data = []
         for line in self.spec:
             for i in line:
-                data += DEFAULT_PALETTE[int(i)]
+                data += palette[int(i)]
 
         self.data = bytearray(data)
 
@@ -121,6 +66,170 @@ class Sprite:
         i2 = i1 + 3
 
         self.data[i1:i2] = [r, g, b]
+
+
+class Buffer:
+    TRANSPARENT = bytearray([0, 0, 0])
+
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.data = self.TRANSPARENT * TOTAL_LEDS
+
+    def set(self, x, y, r, g, b):
+        try:
+            index = GRID[y][x]
+
+        except IndexError:
+            return
+
+        self.data[index*3:index*3+3] = r, g, b
+
+    def get(self, x, y):
+        try:
+            index = GRID[y][x]
+
+        except IndexError:
+            return self.TRANSPARENT
+
+        return self.data[index*3:index*3+3]
+
+    def write_sprites(self, sprites, collision_check=False, clear=True):
+        if clear:
+            self.clear()
+
+        for sprite in sprites:
+            if collision_check and not sprite.collision_check:
+                continue
+
+            for x in range(sprite.x):
+                for y in range(sprite.y):
+                    color = sprite.get(x, y)
+
+                    if not color > self.TRANSPARENT:
+                        continue
+
+                    sprite_x = x + sprite.offset_x
+                    sprite_y = y + sprite.offset_y
+
+                    # x correction on short lines
+                    if y % 2 == 0 and not sprite_y % 2 == 0:
+                        sprite_x += 1
+
+                    # handle out of bounds pixel
+                    if sprite_y < 0 or sprite_y >= len(GRID):
+                        continue
+                    
+                    if sprite_x < 0 or sprite_x >= len(GRID[sprite_y]):
+                        continue
+
+                    # collision check
+                    if collision_check:
+                        if self.get(sprite_x, sprite_y) != self.TRANSPARENT:
+                            return False
+
+                    self.set(sprite_x, sprite_y, *color)
+
+        return True
+
+
+class ParalaxSprite:
+    def __init__(self):
+        self.x = 14
+        self.y = 14
+        self.collision_check = False
+        self.offset_x = 0
+        self.offset_y = 0
+
+        self.buffer = Buffer()
+
+        self.sprites = [
+            [],
+            [],
+            [],
+        ]
+
+        self.counter = 0
+
+    def add_sprite(self, sprite, level):
+        self.sprites[level].append(sprite)
+
+        offset = 0
+
+        for sprite in self.sprites[level]:
+            sprite.offset_x = offset
+            offset += sprite.x
+
+        self.write_sprites()
+
+    def write_sprites(self):
+        self.buffer.clear()
+
+        for level in self.sprites[::-1]:
+            self.buffer.write_sprites(level, collision_check=False,
+                                      clear=False)
+
+    def get(self, x, y):
+        return self.buffer.get(x, y)
+
+    def left(self):
+        pass
+
+    def right(self):
+        for level in range(0, self.counter+1):
+            for index, sprite in enumerate(self.sprites[level]):
+                sprite.offset_x -= 1
+
+                if sprite.offset_x == sprite.x // 2 * -1:
+                    self.sprites[level][index-1].offset_x = sprite.x // 2
+
+        if self.counter < len(self.sprites):
+            self.counter += 1
+
+        if self.counter >= len(self.sprites):
+            self.counter = 0
+
+        self.write_sprites()
+
+
+class Client:
+    def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.address = (host, port)
+
+        self.sprites = []
+        self.buffer = Buffer()
+        self.collision_buffer = Buffer()
+
+    def flush(self, interval=None):
+        def _flush():
+            self.buffer.write_sprites(self.sprites)
+            self.socket.sendto(self.buffer.data, self.address)
+
+        if interval:
+            while True:
+                _flush()
+                time.sleep(interval)
+
+    def move(self, sprite, x, y):
+        old_x = sprite.offset_x
+        old_y = sprite.offset_y
+
+        sprite.offset_x += x
+        sprite.offset_y += y
+
+        collision_check = self.collision_buffer.write_sprites(
+            self.sprites, collision_check=True)
+
+        if collision_check:
+            self.buffer.write_sprites(self.sprites)
+
+        else:
+            sprite.offset_x = old_x
+            sprite.offset_y = old_y
+
+        return collision_check
 
 
 class WorkerPool:
