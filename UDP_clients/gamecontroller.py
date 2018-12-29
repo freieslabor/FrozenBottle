@@ -88,6 +88,7 @@ BUTTON2NONCANON = {
 	"dpad_left": "\x1b[D",
 	"dpad_down": "\x1b[B",
 	"a": "\x1b[A",
+        "b": "\x1b[1",
 	"start": "\n",
 }
 

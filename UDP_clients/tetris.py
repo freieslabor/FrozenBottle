@@ -96,9 +96,8 @@ class brick(object):
 			return True
 		return False
 
-	def try_rotate(self):
+	def try_rotate(self, ddir=-1):
 		# try to rotate. This might need to shift position to match.
-		ddir = -1
 		xform = self.xforms[(self.dir+6+ddir)%6]
 		trypos = list()
 		trypos.append((0,0))
@@ -200,7 +199,11 @@ class game(object):
 				self.brk.render(True)
 			if inp=="\x1b[A":
 				self.brk.render(False)
-				self.brk.try_rotate()
+				self.brk.try_rotate(-1)
+				self.brk.render(True)
+			if inp=="\x1b[1":
+				self.brk.render(False)
+				self.brk.try_rotate(1)
 				self.brk.render(True)
 			if inp=="\x1b[B":
 				self.delay=0
