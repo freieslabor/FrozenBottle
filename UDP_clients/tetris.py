@@ -219,7 +219,7 @@ class game(object):
 					self.state = 1
 					fl = len(self.fulllines)
 					self.score += fl+fl
-                                        self.delayp *= 0.98
+					self.delayp *= 0.98
 					highlight_lines(self.field,self.fulllines)
 					return
 
@@ -332,7 +332,7 @@ def find_full_lines(field):
 	for h in xrange(field.h):
 		bm=0
 		for w in xrange(field.w):
-			c = field.get_wh(w,h) 
+			c = field.get_wh(w,h)
 			if c is not None:
 				if c==0:
 					bm |= 1
@@ -395,7 +395,7 @@ def clearboard(field,game):
 		for w in xrange(field.w):
 			if field.get_wh(w,h) is not None:
 				field.set_wh(w,h,0)
-                                
+
 
 if __name__=="__main__":
 	sys.exit(main(sys.argv[1:]))
