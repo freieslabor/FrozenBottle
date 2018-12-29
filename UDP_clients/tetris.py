@@ -153,8 +153,9 @@ class game(object):
 		for x in xrange(2,13,1):
 			self.field.set_wh(x,2,2)
 
-        def resetspeedp(self):
-            self.speedp = 6000
+	def resetdelayp(self):
+		self.delayp = 6000
+
 	def pickbrick(self):
 		return all_brickdefs[random.randint(0,len(all_brickdefs)-1)]
 
@@ -389,7 +390,7 @@ def mix_col_liness(lin1,lin2,fac1,fac2):
 	return "".join(res)
 
 def clearboard(field,game):
-        game.resetspeedp()
+	game.resetdelayp()
 	for h in xrange(field.h):
 		for w in xrange(field.w):
 			if field.get_wh(w,h) is not None:
