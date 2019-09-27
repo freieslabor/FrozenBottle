@@ -27,7 +27,7 @@ class cio(object):
 	as one string in one call.
 	For example, if user hits cursor-right, result is "\x1b[C".
 	"""
-	__slots__=('buf','posix','fh_ocfg')
+	__slots__=('buf','posix','fh_ocfg','running')
 	_winmap = { # mapping table for windows input >> posix input.
 		"\r":"\n" ,
 		"\xe0H":"\x1b[A" , "\xe0P":"\x1b[B" , "\xe0K":"\x1b[D" , "\xe0M":"\x1b[C" , # cur up/down/left/right
