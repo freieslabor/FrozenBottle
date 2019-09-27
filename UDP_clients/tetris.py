@@ -11,6 +11,7 @@ import argparse
 import LedClientBase
 import hex
 import noncanon_input
+import gamecontroller
 
 DEFAULT_PORT = 8901
 
@@ -274,7 +275,11 @@ def main(args):
 		address = aa.address
 
 	# start input
-	tio = noncanon_input.cio()
+	try:
+		tio = gamecontroller.GameController()
+		tio.start()
+	except:
+		tio = noncanon_input.cio()
 
 	# connect to socket
 	if not LedClientBase.connect(address,port):
