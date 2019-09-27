@@ -41,6 +41,8 @@ class cio(object):
 		if CIO_STARTED:
 			raise Exception("cannot init cio twice")
 		CIO_STARTED = True
+		# stay compatible with gamecontroller
+		self.running = True
 		self.buf=''
 		self.fh_ocfg=list()
 		if os.name == 'posix':
