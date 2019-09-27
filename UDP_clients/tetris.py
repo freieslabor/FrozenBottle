@@ -155,7 +155,7 @@ class game(object):
 
 	def reset(self):
 		self.delayp = 6000
-                self.score = 0
+		self.score = 0
 
 	def pickbrick(self):
 		return all_brickdefs[random.randint(0,len(all_brickdefs)-1)]
