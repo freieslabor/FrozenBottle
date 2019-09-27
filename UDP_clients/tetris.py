@@ -162,7 +162,7 @@ class game(object):
 		return all_brickdefs[random.randint(0,len(all_brickdefs)-1)]
 
 	def step(self,userinput=[]):
-		if isinstance(userinput,list):
+		if not isinstance(userinput,list):
 			raise TypeError("userinput should be list.")
 		if self.state==0:
 			self.step0(userinput)
