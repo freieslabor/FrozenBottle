@@ -1,7 +1,111 @@
 import asyncio
 import IPython
 
-from py3_client import Client, WorkerPool, Sprite, Keyboard, ParalaxSprite
+from frozenbubble import Client, WorkerPool, Sprite, Buffer
+
+class Keyboard:
+    def __init__(self):
+        self.running = True
+
+    def capture(self, left=lambda: None, right=lambda: None, up=lambda: None,
+                down=lambda: None):
+
+        # get the curses screen window
+        curses.filter()
+        screen = curses.initscr()
+
+        # turn off input echoing
+        curses.noecho()
+
+        # respond to keys immediately (don't wait for enter)
+        curses.cbreak()
+
+        # map arrow keys to special values
+        screen.keypad(True)
+
+        try:
+            while self.running:
+                char = screen.getch()
+
+                if char == ord('q'):
+                    break
+
+                elif char == curses.KEY_RIGHT:
+                    right()
+
+                elif char == curses.KEY_LEFT:
+                    left()
+
+                elif char == curses.KEY_UP:
+                    up()
+
+                elif char == curses.KEY_DOWN:
+                    down()
+
+        finally:
+            # shut down cleanly
+            curses.nocbreak()
+            screen.keypad(0)
+            curses.echo()
+            curses.endwin()
+
+class ParalaxSprite:
+    def __init__(self):
+        self.x = 14
+        self.y = 14
+        self.collision_check = False
+        self.offset_x = 0
+        self.offset_y = 0
+
+        self.buffer = Buffer()
+
+        self.sprites = [
+            [],
+            [],
+            [],
+        ]
+
+        self.counter = 0
+
+    def add_sprite(self, sprite, level):
+        self.sprites[level].append(sprite)
+
+        offset = 0
+
+        for sprite in self.sprites[level]:
+            sprite.offset_x = offset
+            offset += sprite.x
+
+        self.write_sprites()
+
+    def write_sprites(self):
+        self.buffer.clear()
+
+        for level in self.sprites[::-1]:
+            self.buffer.write_sprites(level, collision_check=False,
+                                      clear=False)
+
+    def get(self, x, y):
+        return self.buffer.get(x, y)
+
+    def left(self):
+        pass
+
+    def right(self):
+        for level in range(0, self.counter+1):
+            for index, sprite in enumerate(self.sprites[level]):
+                sprite.offset_x -= 1
+
+                if sprite.offset_x == sprite.x // 2 * -1:
+                    self.sprites[level][index-1].offset_x = sprite.x // 2
+
+        if self.counter < len(self.sprites):
+            self.counter += 1
+
+        if self.counter >= len(self.sprites):
+            self.counter = 0
+
+        self.write_sprites()
 
 client = Client()
 keyboard = Keyboard()
