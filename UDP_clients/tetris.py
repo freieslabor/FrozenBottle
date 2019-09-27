@@ -160,9 +160,9 @@ class game(object):
 	def pickbrick(self):
 		return all_brickdefs[random.randint(0,len(all_brickdefs)-1)]
 
-	def step(self,userinput=None):
-		if (userinput is not None) and not isinstance(userinput,basestring):
-			raise TypeError("userinput should be string.")
+	def step(self,userinput=[]):
+		if not isinstance(userinput,list):
+			raise TypeError("userinput should be list.")
 		if self.state==0:
 			self.step0(userinput)
 		elif self.state==1:
@@ -174,7 +174,7 @@ class game(object):
 		else:
 			raise Exception("invalid state "+repr(self.state))
 
-	def step0(self,inp):
+	def step0(self,inputs):
 		# normal run.
 		if self.brk is None:
 			try:
@@ -186,21 +186,23 @@ class game(object):
 				# cannot spawn new brick. game lost.
 				self.state=2
 				return
-		# proc user-input
-		if inp=="\x1b[D":
-			self.brk.render(False)
-			self.brk.move_sideways(-1)
-			self.brk.render(True)
-		if inp=="\x1b[C":
-			self.brk.render(False)
-			self.brk.move_sideways(1)
-			self.brk.render(True)
-		if inp=="\x1b[A":
-			self.brk.render(False)
-			self.brk.try_rotate()
-			self.brk.render(True)
-		if inp=="\x1b[B":
-			self.delay=0
+
+		for inp in inputs:
+			# proc user-input
+			if inp=="\x1b[D":
+				self.brk.render(False)
+				self.brk.move_sideways(-1)
+				self.brk.render(True)
+			if inp=="\x1b[C":
+				self.brk.render(False)
+				self.brk.move_sideways(1)
+				self.brk.render(True)
+			if inp=="\x1b[A":
+				self.brk.render(False)
+				self.brk.try_rotate()
+				self.brk.render(True)
+			if inp=="\x1b[B":
+				self.delay=0
 
 		# process auto-movedown
 		self.delay-=1000
@@ -224,7 +226,7 @@ class game(object):
 					highlight_lines(self.field,self.fulllines)
 					return
 
-	def step1(self,inp):
+	def step1(self,inputs):
 		# flash finished lines
 		self.delay-=1000
 		if self.delay>0:
@@ -234,14 +236,16 @@ class game(object):
 
 		self.state = 0
 
-	def step2(self,inp):
+	def step2(self,inputs):
 		# game over
-		if inp in (" ","\n","\r"):
-			self.delay=0
-			clearboard(self.field, self)
-			self.state=0
+		for inp in inputs:
+			if inp in (" ","\n","\r"):
+				self.delay=0
+				clearboard(self.field, self)
+				self.state=0
+				break
 
-	def step3(self,inp):
+	def step3(self,inputs):
 		# doh?
 		pass
 
@@ -291,12 +295,16 @@ def main(args):
 	for i in xrange(0x7FFF0000):
 
 		# do game.
-		c=None
+		c = []
 		while True:
 			cc = tio.getch()
-			if cc is None:
+			if cc is not None:
+				c.append(cc)
+			else:
 				break
-			c=cc
+				# make sure the list contains at least None
+			if not c:
+				c.append(None)
 		gam.step(c)
 
 		# convert to color-LED-string
