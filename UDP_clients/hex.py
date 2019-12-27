@@ -52,11 +52,11 @@ class HexBuff(object):
 			return self.defval
 		return self.data[h][w]
 
-        def get_w(self):
-            return self.w
+	def get_w(self):
+		return self.w
 
-        def get_h(self):
-            return self.h
+	def get_h(self):
+		return self.h
 
 	def set_xy(self,x,y,val):
 		w,h = self.xy2wh(x,y)
