@@ -211,7 +211,7 @@ class game(object):
 				self.delay=0
 				clearboard(self.field, self)
 				self.state=0
-                                return
+				return
 
 		# process auto-movedown
 		self.delay-=1000
