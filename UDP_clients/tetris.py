@@ -207,6 +207,11 @@ class game(object):
 				self.brk.render(True)
 			if inp=="\x1b[B":
 				self.delay=0
+			if inp in (" ","\n","\r"):
+				self.delay=0
+				clearboard(self.field, self)
+				self.state=0
+                                return
 
 		# process auto-movedown
 		self.delay-=1000
