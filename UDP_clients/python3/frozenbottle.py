@@ -1,7 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import asyncio
-import curses
 import socket
 import time
 
@@ -35,13 +34,14 @@ DEFAULT_PALETTE = [
     [255, 255, 0],
 ]
 
+
 class Sprite:
     def __init__(self, spec='', palette=DEFAULT_PALETTE, collision_check=True,
-            offset_x=0, offset_y=0):
+                 offset_x=0, offset_y=0):
 
         self.offset_x = offset_x
         self.offset_y = offset_y
-        self.collision_check=collision_check
+        self.collision_check = collision_check
 
         self.spec = [i.replace(' ', '') for i in spec.splitlines() if i]
 
@@ -133,6 +133,7 @@ class Buffer:
 
         return True
 
+
 class Client:
     def __init__(self, host=DEFAULT_HOST, port=DEFAULT_PORT):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -176,35 +177,9 @@ class Client:
         return collision_check
 
 
-class WorkerPool:
-    def __init__(self, loop=None, max_workers=4):
-        self.loop = loop or asyncio.get_event_loop()
-        self.executor = ThreadPoolExecutor(max_workers=max_workers)
-
-    async def run(self, func, *args, **kwargs):
-        if not isinstance(func, partial):
-            func = partial(func, *args, **kwargs)
-
-        if not self.executor:
-            return func()
-
-        def _run(func, *args):
-            try:
-                future.set_result(func())
-
-            except Exception as e:
-                future.set_exception(e)
-
-        future = asyncio.Future()
-        self.loop.run_in_executor(self.executor, _run, func)
-
-        return await future
-
-
 if __name__ == '__main__':
     from argparse import ArgumentParser
     import runpy
-    import asyncio
 
     # parse args
     parser = ArgumentParser()
@@ -212,6 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('script', type=str)
     parser.add_argument('--host', type=str, default=DEFAULT_HOST)
     parser.add_argument('--port', type=int, default=DEFAULT_PORT)
+    parser.add_argument('--max-workers', type=int, default=4)
     parser.add_argument('--update-interval', type=float, default=0.2)
 
     args = parser.parse_args()
@@ -221,11 +197,15 @@ if __name__ == '__main__':
 
     # setup worker
     loop = asyncio.get_event_loop()
-    worker_pool = WorkerPool(loop=loop)
+    executor = ThreadPoolExecutor(max_workers=args.max_workers)
 
-    loop.create_task(
-        worker_pool.run(client.flush, interval=args.update_interval))
+    # setup framebuffer task
+    executor.submit(partial(client.flush, interval=args.update_interval))
 
     # run user script
     loop.run_until_complete(
-        worker_pool.run(runpy.run_path, args.script, init_globals=globals()))
+        loop.run_in_executor(
+            executor,
+            partial(runpy.run_path, args.script, init_globals=globals())
+        )
+    )

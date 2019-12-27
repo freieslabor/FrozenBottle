@@ -1,12 +1,21 @@
 import time
 import random
 
+from keyboard import Keyboard
+
+import IPython
+IPython.embed()
+
+exit()
+
 GLOBAL_LOCK = False
 
 PALETTE = [
-    [0,   0,   0],
-    [0, 0, 255],
-    [255, 255, 0],
+    [0, 0, 0],      # black
+    [0, 0, 255],    # blue
+    [255, 255, 0],  # yellow
+    [255, 0, 0],    # red
+    [0, 255, 0],    # green
 ]
 
 client.sprite_mode = True
@@ -25,18 +34,18 @@ def gen_wall():
     i *= -1
     
     sprite = Sprite(sprite_spec, palette=PALETTE, offset_y=14, offset_x=-1)
-    sprite.is_wall = True
+    sprite.type = 'wall'
 
     client.sprites.append(sprite)
 
-def controll_walls():
+def control_walls():
     gen_wall()
 
     while True:
         GLOBAL_LOCK = True
 
-        walls = [i for i in client.sprites if i.is_wall]
-        player = [i for i in client.sprites if not i.is_wall][0]
+        walls = [i for i in client.sprites if i.type == 'wall']
+        player = [i for i in client.sprites if i.type == 'player'][0]
 
         for wall in walls:
             wall.offset_y -= 1
@@ -57,16 +66,42 @@ def controll_walls():
         time.sleep(1)
 
 
-def controll_player():
+def control_player():
     sprite = Sprite('2 ', palette=PALETTE, offset_x = 3)
-    sprite.is_wall = False
+    sprite.type = 'player'
     client.sprites.append(sprite)
 
     while True:
         if not GLOBAL_LOCK:
             client.move(sprite, 0, 1)
 
-        time.sleep(0.3)
+        # you win!
+        if sprite.offset_y >= 13:
+            client.sprite_mode = False
+            client.sprites = []
 
-worker_pool.executor.submit(controll_player)
-worker_pool.executor.submit(controll_walls)
+            for x in range(14):
+                for y in range(14):
+                    client.buffer.set(x, y, 0, 255, 0)
+
+            return
+
+        time.sleep(0.5)
+
+
+def left():
+    player = [i for i in client.sprites if i.type == 'player'][0]
+    player.offset_x -= 1
+
+
+def right():
+    player = [i for i in client.sprites if i.type == 'player'][0]
+    player.offset_x += 1
+
+
+worker_pool.executor.submit(control_player)
+worker_pool.executor.submit(control_walls)
+
+Keyboard = Keyboard()
+
+Keyboard.capture(left=left, right=right)
