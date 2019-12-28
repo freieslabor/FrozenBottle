@@ -5,8 +5,7 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/labor/GIT_FrozenBottle
-ExecStart=UDP_2_ser_server/server_rpi.py
+ExecStart=/home/labor/GIT_FrozenBottle/UDP_2_ser_server/server_rpi.py
 Restart=always
 
 [Install]
