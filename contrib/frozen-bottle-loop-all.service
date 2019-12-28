@@ -6,8 +6,7 @@ Conflicts=frozen-bottle-loop-all.service
 Type=simple
 User=labor
 Group=labor
-WorkingDirectory=/home/labor/GIT_FrozenBottle
-ExecStart=UDP_clients/loop_all.sh
+ExecStart=/home/labor/GIT_FrozenBottle/UDP_clients/loop_all.sh
 
 [Install]
 WantedBy=multi-user.target

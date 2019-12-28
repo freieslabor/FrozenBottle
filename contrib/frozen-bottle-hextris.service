@@ -6,5 +6,4 @@ Conflicts=frozen-bottle-loop-all.service
 Type=simple
 User=labor
 Group=labor
-WorkingDirectory=/home/labor/GIT_FrozenBottle
-ExecStart=UDP_clients/tetris.py localhost
+ExecStart=/home/labor/GIT_FrozenBottle/UDP_clients/tetris.py localhost
