@@ -1,0 +1,9 @@
+[Unit]
+Description=Frozen Bottle Hextris
+Conflicts=frozen-bottle-loop-all.service
+
+[Service]
+Type=simple
+User=labor
+Group=labor
+ExecStart=/home/labor/GIT_FrozenBottle/UDP_clients/tetris.py localhost

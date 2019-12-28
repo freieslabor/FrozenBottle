@@ -1,0 +1,12 @@
+[Unit]
+Description=Frozen Bottle Loop All Clients
+Conflicts=frozen-bottle-hextris.service
+
+[Service]
+Type=simple
+User=labor
+Group=labor
+ExecStart=/home/labor/GIT_FrozenBottle/UDP_clients/loop_all.sh
+
+[Install]
+WantedBy=multi-user.target
