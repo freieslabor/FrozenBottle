@@ -5,6 +5,8 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
+User=labor
+Group=labor
 ExecStart=/home/labor/GIT_FrozenBottle/UDP_2_ser_server/server_rpi.py
 Restart=always
 
