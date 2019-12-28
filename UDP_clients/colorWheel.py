@@ -15,7 +15,7 @@ ORIGIN_X = 6*2+1
 ORIGIN_Y = 6*2+1
 SCALE_X = 0.5
 SCALE_Y = 0.5*math.cos(30*math.pi/180.0)
-TIMESTEP = 0.0001
+TIMESTEP = 0.001
 ROTSPEED = 8 # rotations/sec
 
 def main(args):
