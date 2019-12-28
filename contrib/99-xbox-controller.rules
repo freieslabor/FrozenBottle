@@ -1,0 +1,3 @@
+# start hextris when xbox controller gets turned on, run loop all when turned off
+ACTION=="add", SUBSYSTEM=="input", ENV{DEVNAME}=="/dev/input/js0", MODE="666", ENV{SYSTEMD_WANTS}="frozen-bottle-hextris.service", TAG+="systemd"
+ACTION=="remove", SUBSYSTEM=="input", ENV{DEVNAME}=="/dev/input/js0", ENV{SYSTEMD_WANTS}="frozen-bottle-loop-all.service", TAG+="systemd"
