@@ -37,6 +37,8 @@ exit_script()
 
 trap exit_script SIGINT SIGTERM
 
+cd "$(dirname "$0")"
+
 while true
 do
 
