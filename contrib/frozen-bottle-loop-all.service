@@ -8,3 +8,6 @@ User=labor
 Group=labor
 WorkingDirectory=/home/labor/GIT_FrozenBottle
 ExecStart=UDP_clients/loop_all.sh
+
+[Install]
+WantedBy=multi-user.target
