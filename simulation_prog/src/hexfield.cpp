@@ -50,10 +50,10 @@ void HexArray::setup_square(unsigned int len_row_0,unsigned int rows,bool first_
 		if(toright)
 		{
 			for( int x=indent ; x<gw ; x+=2 )
-				set( seq++ , (x>>1)+x0 , y , 0x000000 );
+				set( seq++ , (x>>1)+x0 , y );
 		}else{
 			for( int x=((gw-1-indent)&(~1))+indent ; x>=0 ; x-=2 )
-				set( seq++ , (x>>1)+x0 , y , 0x000000 );
+				set( seq++ , (x>>1)+x0 , y );
 		}
 		if(indent)
 			x0--;
@@ -82,10 +82,10 @@ void HexArray::setup_triangle(unsigned int edge_len,bool start_first_reversed,bo
 		if(toright)
 		{
 			for( int x=0 ; x<(int)edge_len ; x++ )
-				set( seq++ , x , y , 0x000000 );
+				set( seq++ , x , y );
 		}else{
 			for( int x=edge_len-1 ; x>=0 ; x-- )
-				set( seq++ , x , y , 0x000000 );
+				set( seq++ , x , y );
 		}
 		if(zigzag)
 			toright = !toright;
@@ -94,35 +94,49 @@ void HexArray::setup_triangle(unsigned int edge_len,bool start_first_reversed,bo
 	}
 }
 
-bool HexArray::get_sequence_item(unsigned int seq_id,int *out_w,int *out_h,unsigned int *out_color) const
+bool HexArray::get_sequence_item(unsigned int seq_id,float *out_w,float *out_h,unsigned int *out_color) const
 {
-  int x,y;
+  float x,y;
   unsigned int v;
-	if( seq_id >= (unsigned int)m_seq_2_grid.size() )
+	if( seq_id >= 6u*(unsigned int)m_seq_2_grid.size() )
 		return false;
-	v = m_seq_2_grid[seq_id];
+	v = m_seq_2_grid[seq_id/6];
 	x = PAIR_GET_X(v);
 	y = PAIR_GET_Y(v);
-	*out_w = 2*x + y ;
-	*out_h = 2*y;
+
+	x = 2*x + y ;
+	y = 2*y ;
+
+	// now add offset for the one-triangle of the hex.
+	if(1)
+	{
+		float ang = 3.14159265359f*(seq_id%6)/3.0f;
+		float dx = 0.65f*cosf(ang);
+		float dy = 0.65f*sinf(ang);
+		x+=dx;
+		y+=dy;
+	}
+
+	*out_w = x ;
+	*out_h = y;
 	*out_color = m_rgb[seq_id];
 	return true;
 }
 
 unsigned int HexArray::get_sequence_count() const
 {
-	return (unsigned int)m_seq_2_grid.size();
+	return (unsigned int)m_seq_2_grid.size()*6u;
 }
 
 bool HexArray::set_sequence_color(unsigned int seq_id,unsigned int color)
 {
-	if( seq_id >= (unsigned int)m_seq_2_grid.size() )
+	if( seq_id >= (unsigned int)m_rgb.size() )
 		return false;
 	m_rgb[seq_id] = color;
 	return true;
 }
 
-void HexArray::set(unsigned int seq_idx,int x,int y,unsigned int color)
+void HexArray::set(unsigned int seq_idx,int x,int y)
 {
   bool bres;
 	// stretch ?
@@ -155,9 +169,9 @@ void HexArray::set(unsigned int seq_idx,int x,int y,unsigned int color)
 		m_seq_2_grid.push_back(0);
 	m_seq_2_grid[seq_idx] = PAIR_BUILD(x,y);
 
-	while( seq_idx >= m_rgb.size() )
+	// ugly simple array sizing. grow if too small.
+	while( seq_idx*6+6 > m_rgb.size() )
 		m_rgb.push_back(0);
-	m_rgb[seq_idx] = color;
 }
 
 bool HexArray::stretch(int add_x_min,int add_x_max,int add_y_min)

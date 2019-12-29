@@ -92,6 +92,7 @@ void process_mouse_click(int sx,int sy);
 void draw( SDL_Renderer *rend , unsigned int frameNo );
 bool draw_a_reg_poly(SDL_Texture *tex, float r1, float r2);
 bool draw_a_hex     (SDL_Texture *tex, float r1, float r2);
+bool draw_a_triangle(SDL_Texture *tex, float r1, float r2,bool bPointup);
 bool get_cell_screen_coord(unsigned int seq_idx,int *out_w,int *out_h,unsigned int *out_color);
 void ctrl_c_func(void *ctx);
 
@@ -181,9 +182,10 @@ int main(int argc, char* argv[])
 					color = 0x888888ul;
 				for(t=0,wr=input_buffer;t<num;t++)
 				{
-					*(wr++) = (color)&255;
-					*(wr++) = (color>>8)&255;
-					*(wr++) = (color>>16)&255;
+					unsigned int tcol = color;
+					*(wr++) = (tcol)&255;
+					*(wr++) = (tcol>>8)&255;
+					*(wr++) = (tcol>>16)&255;
 				}
 				// use same processing as normal data for idle-blink.
 				process_UDP_data( input_buffer , num*3 );
@@ -328,14 +330,22 @@ void process_mouse_click(int sx,int sy)
 void draw( SDL_Renderer *rend , unsigned int frameNo )
 {
 //  Sint16 px[8],py[8];
-  static SDL_Texture *otex=0;
+  static SDL_Texture *otex[2]={0,0};
   SDL_Rect rc;
-	if(!otex)
+	if(!otex[0])
 	{
-		otex = SDL_CreateTexture( rend , SDL_PIXELFORMAT_RGBA8888 , SDL_TEXTUREACCESS_STREAMING , HEX_TEX_SIZE , HEX_TEX_SIZE );
-		if(!otex)return;
-		if(!draw_a_hex(otex,0.90f*(float)STEP_X,0.95f*(float)STEP_X))
+		otex[1] = SDL_CreateTexture( rend , SDL_PIXELFORMAT_RGBA8888 , SDL_TEXTUREACCESS_STREAMING , HEX_TEX_SIZE , HEX_TEX_SIZE );
+		if(!otex[1])return;
+		otex[0] = SDL_CreateTexture( rend , SDL_PIXELFORMAT_RGBA8888 , SDL_TEXTUREACCESS_STREAMING , HEX_TEX_SIZE , HEX_TEX_SIZE );
+		if(!otex[0])return;
+		if(!draw_a_triangle(otex[0],0.24f*(float)STEP_X,0.29f*(float)STEP_X,false))
 			return;
+		if(!draw_a_triangle(otex[1],0.24f*(float)STEP_X,0.29f*(float)STEP_X,true))
+			return;
+//		if(!draw_a_hex(otex[0],0.15f*(float)STEP_X,0.15f*(float)STEP_X))
+//			return;
+//		if(!draw_a_hex(otex[1],0.15f*(float)STEP_X,0.15f*(float)STEP_X))
+//			return;
 	}
 	SDL_RenderSetScale( rend , 1.0f , 1.0f );	// set to windowSize/logicalSize
 
@@ -349,7 +359,8 @@ void draw( SDL_Renderer *rend , unsigned int frameNo )
 //	SDL_SetRenderTarget( rend , orgTex );
 
 
-	SDL_SetTextureBlendMode( otex , SDL_BLENDMODE_BLEND );
+	SDL_SetTextureBlendMode( otex[0] , SDL_BLENDMODE_BLEND );
+	SDL_SetTextureBlendMode( otex[1] , SDL_BLENDMODE_BLEND );
 	rc.w = HEX_TEX_SIZE;
 	rc.h = HEX_TEX_SIZE;
 
@@ -361,8 +372,8 @@ void draw( SDL_Renderer *rend , unsigned int frameNo )
 			break;
 		rc.x = x-(HEX_TEX_SIZE>>1);
 		rc.y = y-(HEX_TEX_SIZE>>1);
-		SDL_SetTextureColorMod(otex,(col)&0xFF,(col>>8)&0xFF,(col>>16)&0xFF);
-		SDL_RenderCopy( rend , otex , 0 , &rc );
+		SDL_SetTextureColorMod(otex[t&1],(col)&0xFF,(col>>8)&0xFF,(col>>16)&0xFF);
+		SDL_RenderCopy( rend , otex[t&1] , 0 , &rc );
 	}
 
 //	SDL_RenderDrawLine( rend , 0,0 , (frameNo%30)*10,300 );
@@ -445,15 +456,26 @@ bool draw_a_hex(SDL_Texture *tex ,float r1 ,float r2)
 	return draw_a_reg_poly(tex,r1,r2,6,0.0f);
 }
 
+bool draw_a_triangle(SDL_Texture *tex, float r1, float r2,bool bPointup)
+{
+	return draw_a_reg_poly(tex,r1,r2,3,(bPointup?0.0f:1.0f)/6.0f-2/12.0f);
+}
+
 /// call the get_sequence_item() function, but transform output coords to screen-pixel coords.
 bool get_cell_screen_coord(unsigned int seq_idx,int *out_w,int *out_h,unsigned int *out_color)
 {
   unsigned int col;
+  float fw,fh;
   int w,h;
-	if(!field.get_sequence_item(seq_idx,&w,&h,&col))
+	// calc pos for hex-grid. do not yet consider 6-subdiv.
+	if(!field.get_sequence_item(seq_idx,&fw,&fh,&col))
 		return false;
-	w = STEP_X + (STEP_X>>3) + w*STEP_X;
-	h = WINDOW_GFX_HEIGHT - STEP_Y - (STEP_Y>>2) - h*STEP_Y;
+	if( (seq_idx%6) == ((seq_idx/6)%6) )
+		col = 0;
+	// calc pos of middle of the hex.
+	w = (int)( STEP_X + STEP_X*0.125f + fw*STEP_X );
+	h = (int)( WINDOW_GFX_HEIGHT - STEP_Y - STEP_Y*0.25f - fh*STEP_Y );
+
 	*out_w = w;
 	*out_h = h;
 	if(out_color)

@@ -46,7 +46,7 @@ class HexArray
 
 
 	// get an item. returned coordinates are screen-rect-coords. W-step is 2, next row is interleaved in it.
-	bool get_sequence_item(unsigned int seq_id,int *out_w,int *out_h,unsigned int *out_color) const;
+	bool get_sequence_item(unsigned int seq_id,float *out_w,float *out_h,unsigned int *out_color) const;
 
 	// query number of sequence items
 	unsigned int get_sequence_count() const;
@@ -56,7 +56,7 @@ class HexArray
 
 
   private:
-	void set(unsigned int seq_idx,int x,int y,unsigned int color);
+	void set(unsigned int seq_idx,int x,int y);
 	bool stretch(int add_x_min,int add_x_max,int add_y_min);
 
 	std::vector<unsigned int> m_grid_2_seq;	// 2D array, contains sequence-numbers or NO_SEQ
