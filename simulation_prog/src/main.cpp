@@ -30,10 +30,10 @@ for i in xrange(256):
 //#define WINDOW_GFX_WIDTH 1056
 //#define WINDOW_GFX_HEIGHT 950
 
-#define STEP_X 30
-#define STEP_Y 26
-#define WINDOW_GFX_WIDTH 850
-#define WINDOW_GFX_HEIGHT 750
+#define STEP_X 27
+#define STEP_Y 23
+#define WINDOW_GFX_WIDTH (2*STEP_X*GLASSES_FIRST_ROW+8)
+#define WINDOW_GFX_HEIGHT (2*STEP_Y*GLASSES_HIGH+30)
 
 #define HEX_TEX_SIZE 128
 
@@ -90,7 +90,8 @@ HexArray field;
 void process_UDP_data( unsigned char *input_buffer , unsigned int input_data );
 void process_mouse_click(int sx,int sy);
 void draw( SDL_Renderer *rend , unsigned int frameNo );
-bool draw_a_hex( SDL_Texture *tex , float r1 , float r2 );
+bool draw_a_reg_poly(SDL_Texture *tex, float r1, float r2);
+bool draw_a_hex     (SDL_Texture *tex, float r1, float r2);
 bool get_cell_screen_coord(unsigned int seq_idx,int *out_w,int *out_h,unsigned int *out_color);
 void ctrl_c_func(void *ctx);
 
@@ -368,16 +369,18 @@ void draw( SDL_Renderer *rend , unsigned int frameNo )
 
 }
 
-/// Draw a single hex pixel-wise to a texture for later blitting. Done only once.
-bool draw_a_hex( SDL_Texture *tex , float r1 , float r2 )
+/// Draw a regular polygon pixel-wise to a texture for later blitting. Done only once.
+bool draw_a_reg_poly(SDL_Texture *tex, float r1, float r2, int corners, float ang0)
 {
   int w,h,acc;
-  float vx[6],vy[6];
+  float vx[16],vy[16];
   Uint32 tForm;
   void *pix;
   int pitch;
   unsigned int mulbits,addbits;
   float mulfac;
+	if( corners<3 || corners>16 )
+		return false;
 	SDL_QueryTexture( tex , &tForm , &acc , &w , &h );
 	switch(tForm)
 	{
@@ -399,10 +402,10 @@ bool draw_a_hex( SDL_Texture *tex , float r1 , float r2 )
 	if(SDL_LockTexture(tex,0,&pix,&pitch))
 		return false;
 
-	for(unsigned int t=0;t<6;t++)
+	for(unsigned int t=0;t<(unsigned int)corners;t++)
 	{
-	  float ang = (float)t;
-		ang *= 3.14159265359f/3.0f;
+	  float ang = (float)t/(float)corners + ang0;
+		ang *= 3.14159265359f*2.0f;
 		vx[t] = cosf(ang);
 		vy[t] = sinf(ang);
 	}
@@ -417,7 +420,7 @@ bool draw_a_hex( SDL_Texture *tex , float r1 , float r2 )
 		{
 		  float fx = x-hw;
 		  float fout = 0.0f;
-			for(unsigned int t=0;t<6;t++)
+			for(unsigned int t=0;t<(unsigned int)corners;t++)
 			{
 			  float tmp = fx*vx[t]+fy*vy[t];
 				if( tmp>fout )fout=tmp;
@@ -434,6 +437,12 @@ bool draw_a_hex( SDL_Texture *tex , float r1 , float r2 )
 
 	SDL_UnlockTexture(tex);
 	return true;
+}
+
+/// Draw a single hex pixel-wise to a texture for later blitting. Done only once.
+bool draw_a_hex(SDL_Texture *tex ,float r1 ,float r2)
+{
+	return draw_a_reg_poly(tex,r1,r2,6,0.0f);
 }
 
 /// call the get_sequence_item() function, but transform output coords to screen-pixel coords.
