@@ -27,6 +27,7 @@ LED_DMA        = 10      # DMA channel to use for generating signal (try 10)
 LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
+POWERLIMIT     = 115
 
 
 maxLED = LED_COUNT  # for I/O packets
@@ -202,6 +203,8 @@ def load_default_gammacurves():
 def fix_and_filter(ar):
 
 	numleds = len(ar)//3
+	summax = POWERLIMIT*numleds
+	sumpwr = 0
 
 	for i in xrange(numleds):
 		i3 = i*3
@@ -228,6 +231,14 @@ def fix_and_filter(ar):
 			ar[i3+0]=b;
 			ar[i3+1]=r;
 			ar[i3+2]=g;
+
+		# sum power
+		sumpwr += (r+g+b)
+
+	if sumpwr > summax:
+		quot = float(summax)/float(sumpwr)
+		for i in xrange(len(ar)):
+			ar[i] = int(ar[i]*quot+0.5)
 
 	return ar
 
