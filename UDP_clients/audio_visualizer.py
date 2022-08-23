@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 # based on https://github.com/karlstav/cava/issues/123#issuecomment-307891020
 # by worron <worrongm@gmail.com>
@@ -20,13 +20,46 @@ RAW_TARGET = "/dev/stdout"
 
 conpat = """
 [general]
+framerate = 60
 bars = %d
 [output]
 channels = mono
 method = raw
 raw_target = %s
 bit_format = 8bit
+[smoothing]
+noise_reduction = 0.70
 """
+
+color_gradient = (
+	(58,  186, 32),
+	(67,  179, 31),
+	(75,  172, 31),
+	(84,  165, 30),
+	(92,  157, 30),
+	(101, 150, 29),
+	(109, 143, 29),
+	(118, 136, 28),
+	(126, 128, 28),
+	(135, 121, 27),
+	(143, 114, 27),
+	(151, 107, 26),
+	(160, 100, 26),
+	(168, 92,  25),
+	(177, 85,  25),
+	(185, 78,  24),
+	(194, 71,  24),
+	(202, 63,  23),
+	(211, 56,  23),
+	(219, 49,  22),
+	(228, 42,  22),
+	(236, 34,  21),
+	(245, 27,  21),
+	(253, 20,  20),
+	(253, 20,  20),
+	(253, 20,  20),
+	(253, 20,  20),
+)
 
 config = conpat % (BARS_NUMBER, RAW_TARGET)
 bytetype, bytesize, bytenorm = ("B", 1, 255)  # 8bit
@@ -73,12 +106,11 @@ def main(args):
 				lin = list()
 				for j in xrange(LedClientBase.NUMLEDS):
 					(xx,yy) = LedClientBase.seq_2_pos(j)
-					h = samples[xx//2]
-					if h > 6 * yy:
-						# farbe
-						rgb_tuple = (1, 0, 0)
+					sample = samples[xx // 2]
+					if sample > 9 * yy:
+						rgb_255 = color_gradient[yy]
+						rgb_tuple = tuple(val / 255.0 for val in rgb_255)
 					else:
-						# schwarz
 						rgb_tuple = (0, 0, 0)
 
 					lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
