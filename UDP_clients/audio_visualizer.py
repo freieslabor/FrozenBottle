@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # based on https://github.com/karlstav/cava/issues/123#issuecomment-307891020
 # by worron <worrongm@gmail.com>
@@ -71,7 +71,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-	print repr(aa)
+	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -104,7 +104,7 @@ def main(args):
 				samples = [i for i in struct.unpack(fmt, data)]  # raw values without norming
 
 				lin = list()
-				for j in xrange(LedClientBase.NUMLEDS):
+				for j in range(LedClientBase.NUMLEDS):
 					(xx,yy) = LedClientBase.seq_2_pos(j)
 					sample = samples[xx // 2]
 					if sample > 9 * yy:
@@ -114,7 +114,7 @@ def main(args):
 						rgb_tuple = (0, 0, 0)
 
 					lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-				LedClientBase.send("".join(lin))
+				LedClientBase.send(b"".join(lin))
 
 		finally:
 			LedClientBase.closedown()
