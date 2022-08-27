@@ -2,3 +2,5 @@
 *.pyc
 *.exe
 *dSYM
+*.swo
+*.swp
