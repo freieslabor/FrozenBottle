@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
 # plasma in the frozen-bottle
@@ -22,7 +22,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-	print repr(aa)
+	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -41,11 +41,11 @@ def main(args):
 
 	t = 0.0
 	vr = vg = vb = 0.0
-	for i in xrange(0x7FFF0000):
+	for i in range(0x7FFF0000):
 
 		# make color-data for map
 		lin = list()
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			vx = xx * 2 * math.pi / 18
 			vy = yy * 2 * math.pi / 18
@@ -61,7 +61,7 @@ def main(args):
 			rgb_tuple = (vr, vg, vb)
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
 		# send to strip
-		LedClientBase.send("".join(lin))
+		LedClientBase.send(b"".join(lin))
 
 		time.sleep(0.01)
 		t += 0.050
