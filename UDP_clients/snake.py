@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # program to send some blinking to UDP for the flozen-bottle setup.
 
@@ -25,7 +25,7 @@ class glow(object):
 
 	def move(self):
 		rotmap = (0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,1,1,1,1,2,-2)
-		for j in xrange(30):
+		for j in range(30):
 			d = rotmap[random.randint(0,len(rotmap)-1)]
 			d = (self.prevdir+d+6)%6
 			nx = self.x+hex.dir_wh[d][0]
@@ -49,7 +49,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-	print repr(aa)
+	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -71,21 +71,21 @@ def main(args):
 	# build array matrix.
 	field = LedClientBase.get_matching_HexBuff(0,1)
 	glows = list()
-	for i in xrange(3):
+	for i in range(3):
 		(w,h) = field.xy2wh(2+i+i,0)
 		glows.append( glow(field,w,h,i) )
 
 	dirs = hex.dir_wh
 
 
-	for i in xrange(0x7FFF0000):
+	for i in range(0x7FFF0000):
 
 		# move
 		for gl in glows:
 			gl.move()
 
 		# decay
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(x,y) = LedClientBase.seq_2_pos(j)
 			value = field.get_xy(x,y)
 			val1 = (value)&255 ; val2 = (value>>8)&255 ; val3 = (value>>16)&255
@@ -94,7 +94,7 @@ def main(args):
 			val3 = max( val3-2 , 0 )
 			field.set_xy(x,y,(val1)+(val2<<8)+(val3<<16))
 		# place self
-		for i in xrange(3):
+		for i in range(3):
 			x = glows[i].x ; y = glows[i].y
 			value = field.get_wh(x,y)
 			value &= ~(0xFF<<(8*i))
@@ -103,18 +103,15 @@ def main(args):
 
 		# convert to color-LED-string
 		lin = list()
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			num = field.get_xy(xx,yy)
 			val1 = (num)&255 ; val2 = (num>>8)&255 ; val3 = (num>>16)&255
-			_r = (255*val1)//100
-			_g = (255*val2)//100
-			_b = (255*val3)//100
 			if val1==100 or val2==100 or val3==100:
-				(_r,_g,_b) = (255,255,255)
-			lin.append(chr(_r)+chr(_g)+chr(_b))
+				val1, val2, val3 = 100, 100, 100
+			lin.append(LedClientBase.rgbF_2_bytes((val1/100, val2/100, val3/100)))
 		#send
-		LedClientBase.send("".join(lin))
+		LedClientBase.send(b"".join(lin))
 
 		#loop-delay
 		time.sleep(0.1)
