@@ -59,8 +59,8 @@ def get_matching_HexBuff(defVal=0,border=0):
 		res.set_xy(xy&0xFFFF,xy>>16,defVal)
 	return res
 
-""" convert a hsv value to a 3-tuple rgb. """
 def hsv2rgb_float(h,s,v):
+	""" convert a hsv value to a 3-tuple rgb. """
 	if h<0.0: h=0.0
 	if h>1.0: h=1.0
 	if s<0.0: s=0.0
@@ -88,8 +88,8 @@ def hsv2rgb_float(h,s,v):
 	b = q+s*b
 	return (v*r,v*g,v*b)
 
-""" convert a float-3-tuple to the pair of bytes, as chars. Returns a short string of 2 chars. """
 def rgbF_2_bytes(rgb):
+	""" convert a float-3-tuple to the pair of bytes, as chars. Returns a short string of 2 chars. """
 	# pass in tuple
 	r,g,b = rgb
 	r = int(256.0*r)
@@ -100,8 +100,8 @@ def rgbF_2_bytes(rgb):
 	if b>255: b=255
 	return chr(r)+chr(g)+chr(b)
 
-""" Convert the LED-sequence to an x/y coordinate pair. """
 def seq_2_pos(idx):
+	""" Convert the LED-sequence to an x/y coordinate pair. """
 	dblRow = idx//(LEN_FIRST_ROW+LEN_FIRST_ROW-1)
 	dblIdx = idx%(LEN_FIRST_ROW+LEN_FIRST_ROW-1)
 	if dblIdx >= LEN_FIRST_ROW:
@@ -109,8 +109,8 @@ def seq_2_pos(idx):
 	return 2*dblIdx , dblRow*4
 
 
-""" get position of a LED, in int coords. """
 def seq_2_pos(idx):
+	""" get position of a LED, in int coords. """
 	global SEQ2POS
 	if idx not in SEQ2POS:
 		return None
