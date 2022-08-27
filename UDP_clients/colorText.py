@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # program to send some blinking to UDP for the flozen-bottle setup.
 
@@ -23,7 +23,7 @@ def main(args):
     parser.add_argument("-d", "--dynamic", default=False, action="store_true")
     aa = parser.parse_args()
 
-    print repr(aa)
+    print(repr(aa))
 
     port = DEFAULT_PORT
     address = "127.0.0.1"
@@ -54,7 +54,7 @@ def main(args):
     t = 0.0
     length = 13 + len(l) * 7
 
-    for i in xrange(0x7FFF0000):
+    for i in range(0x7FFF0000):
         ii = (i % length)
         distance = 13
         mainbuff.fill_val((0, 0, 0.01))
@@ -71,7 +71,7 @@ def main(args):
             distance += 7
 
         lin = list()
-        for j in xrange(LedClientBase.NUMLEDS):
+        for j in range(LedClientBase.NUMLEDS):
             (xx, yy) = LedClientBase.seq_2_pos(j)
             rgb_tuple = mainbuff.get_xy(xx, yy)
             if (rgb_tuple == (1, 1, 1)):
@@ -80,7 +80,7 @@ def main(args):
                 rgb_tuple = color_calc_func_1(i, j, xx, yy)
 
             lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-        LedClientBase.send("".join(lin))
+        LedClientBase.send(b"".join(lin))
 
         time.sleep(0.06)
         t += 0.1

@@ -1,0 +1,24 @@
+HEX sample
+
+COLORS
+r 240,30,30
+g 30,240,30
+b 30,30,240
+y 210,210,30
+W 245,245,245
+B 0,0,0
+
+DATA
+#  B B   B B
+# B r B B r B
+#B r B   B r B
+# B b y y b B
+#B b b b b b B
+# B b b b b B
+#  B B B B B
+
+    . r .
+   r   r b
+  . r y b b
+   b b b b
+    b b b

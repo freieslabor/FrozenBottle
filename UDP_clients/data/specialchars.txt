@@ -1,0 +1,5 @@
+
+
+ls -l "<.hex" ">.hex" " .hex" ",.hex" ";.hex" ":.hex" \!.hex "?.hex" "'.hex" "\".hex" "(.hex" ").hex" "\$.hex" "*.hex" "\\.hex" "&.hex" "%.hex"
+
+
