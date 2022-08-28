@@ -1,3 +1,4 @@
+import sys
 #-- include('examples/showgrabbox.py')--#
 import pyscreenshot as ImageGrab
 
