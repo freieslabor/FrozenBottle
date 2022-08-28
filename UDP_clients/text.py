@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python3
 
 # Not yet a scroll-text. But a base with a class for representing, blitting and rotating hex-patterns.
 
@@ -22,7 +22,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	args = parser.parse_args()
 
-#	print repr(aa)
+#	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -37,51 +37,51 @@ def main(args):
 		address = args.address
 
 	LedClientBase.connect(address,port)
-	
+
 	mainbuff = hex.HexBuff(20,14,0,0,(0.0,0.0,0.0))
 	mainbuff.fill_val((0.2,0.2,0.2))
-		
+
 	l = list()
 	for i in range(len(args.text)):
-            if (args.text[i] == "/"):
-	        l.append(read_hex_file(os.path.join("data","slash.hex")))
-            else:
-	        l.append(read_hex_file(os.path.join("data",args.text[i]+".hex")))
+		if (args.text[i] == "/"):
+			l.append(read_hex_file(os.path.join("data","slash.hex")))
+		else:
+			l.append(read_hex_file(os.path.join("data",args.text[i]+".hex")))
 
 	t = 0.0
 	lr = -1
-        length = 13 + len(l)*7
-        r = 0.5
-        g = 0
-        b = 0
-	for i in xrange(0x7FFF0000):
+	length = 13 + len(l)*7
+	r = 0.5
+	g = 0
+	b = 0
+	for i in range(0x7FFF0000):
 
 		# play
 		ii = (i%length)
-                if ( ii == 0):
-                    if (r == 0.5):
-                        g = 0.5
-                        r = 0
-                    elif (g == 0.5):
-                        b = 0.5
-                        g = 0
-                    elif (b == 0.5):
-                        r = 0.5
-                        b = 0
+		if ( ii == 0):
+			if (r == 0.5):
+				g = 0.5
+				r = 0
+			elif (g == 0.5):
+				b = 0.5
+				g = 0
+			elif (b == 0.5):
+				r = 0.5
+				b = 0
 		mainbuff.fill_val((r,g,b))
-                distance = 13
-                for j in range(len(l)):
-                    mainbuff.blit(l[j],distance - ii,4,None)
-                    distance += 7
+		distance = 13
+		for j in range(len(l)):
+			mainbuff.blit(l[j],distance - ii,4,None)
+			distance += 7
 
 		# now prepare and send
 		lin = list()
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			rgb_tuple = mainbuff.get_xy(xx,yy)
 
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-		LedClientBase.send("".join(lin))
+		LedClientBase.send(b"".join(lin))
 
 		time.sleep(0.03)
 		t += 0.100
