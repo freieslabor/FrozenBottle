@@ -51,11 +51,11 @@ class World(object):
 
 
     def add_wall(self,x0,y0,x1,y1):
-    	""" Helper function, creates a Wall() object and adds it to 'walls' list. """
+        """ Helper function, creates a Wall() object and adds it to 'walls' list. """
         self.walls.append(Wall(x0,y0,x1,y1))
 
     def look_dir(self,startX,startY,dx,dy):
-    	""" calculate a 2d ray into some direction, find which wall was hit. Return 4-tuple wall,distance,side,entityhit """
+        """ calculate a 2d ray into some direction, find which wall was hit. Return 4-tuple wall,distance,side,entityhit """
         # normalize dir-vector
         #tmp = 1.0/math.sqrt(dx*dx+dy*dy)
         #dx*=tmp
@@ -107,7 +107,7 @@ class Entity(object):
         if self.world is not None:
             try:
                 self.world.entities.remove(self)
-            except ValueError,ex:
+            except ValueError:
                 pass
         self.world = None
 
@@ -163,7 +163,7 @@ class Wall(object):
         self.y1=float(y1)
         self.walldir=math.atan2(y1-y0,x1-x0)
         self.color = 0x00EE2211
-        
+
     def p(self):
         print("("+str(self.x0)+","+str(self.y0)+"),("+str(self.x1)+","+str(self.y1)+")")
 
@@ -226,7 +226,7 @@ class knot(object):
 
     def gen(self,start,seed,size):
         th = 75
-        #north 
+        #north
         self.neightbors = list()
         random.seed(str(seed) + str((self.pos[0],self.pos[1])) + str((self.pos[0],self.pos[1]+1)))
         if random.randint(0,100) < th:
@@ -235,7 +235,7 @@ class knot(object):
             if self.north.getdist(start) > size:
                 self.neightbors.remove(self.north)
                 self.north = None
-        #east  
+        #east
         random.seed(str(seed) + str((self.pos[0],self.pos[1])) + str((self.pos[0]+1,self.pos[1])))
         if random.randint(0,100) < th:
             self.east = knot(self.pos[0]+1, self.pos[1])
@@ -243,7 +243,7 @@ class knot(object):
             if self.east.getdist(start) > size:
                 self.neightbors.remove(self.east)
                 self.east = None
-        #south  
+        #south
         random.seed(str(seed) + str((self.pos[0],self.pos[1]-1)) + str((self.pos[0],self.pos[1])))
         if random.randint(0,100) < th:
             self.south = knot(self.pos[0], self.pos[1]-1)
@@ -251,7 +251,7 @@ class knot(object):
             if self.south.getdist(start) > size:
                 self.neightbors.remove(self.south)
                 self.south = None
-        #west  
+        #west
         random.seed(str(seed) + str((self.pos[0]-1,self.pos[1])) + str((self.pos[0],self.pos[1])))
         if random.randint(0,100) < th:
             self.west = knot(self.pos[0]-1, self.pos[1])
