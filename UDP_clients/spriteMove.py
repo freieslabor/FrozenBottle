@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python3
 
 # Not yet a scroll-text. But a base with a class for representing, blitting and rotating hex-patterns.
 
@@ -21,7 +21,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-#	print repr(aa)
+#	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -36,17 +36,17 @@ def main(args):
 		address = aa.address
 
 	LedClientBase.connect(address,port)
-	
+
 	mainbuff = hex.HexBuff(20,14,0,0,(0.0,0.0,0.0))
 	mainbuff.fill_val((0.2,0.2,0.2))
-		
+
 	l = list()
 	for i in range(10):
 		l.append(read_hex_file(os.path.join("data","erlenmeier"+str(i)+".hex")))
 
 	t = 0.0
 	lr = -1
-	for i in xrange(0x7FFF0000):
+	for i in range(0x7FFF0000):
 
 		# play
 		mainbuff.fill_val((0.0,0.0,0.0))
@@ -55,12 +55,12 @@ def main(args):
 
 		# now prepare and send
 		lin = list()
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			rgb_tuple = mainbuff.get_xy(xx,yy)
 
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-		LedClientBase.send("".join(lin))
+		LedClientBase.send(b"".join(lin))
 
 		time.sleep(0.100)
 		t += 0.100
