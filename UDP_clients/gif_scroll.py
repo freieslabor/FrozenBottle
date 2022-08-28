@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Read an image, show statically.
 
@@ -21,7 +21,7 @@ def main(args):
     parser.add_argument("-p", "--port", type=int, help="UDP port number")
     aa = parser.parse_args()
 
-    #	print repr(aa)
+    #	print(repr(aa))
 
     port = DEFAULT_PORT
     address = "127.0.0.1"
@@ -50,22 +50,22 @@ def main(args):
 
     get_image(img, colors, buffer)
 
-    for i in xrange(0x7FFF0000):
-        for x in xrange(-w+14, 0, 1):
-            for i in xrange(3):
+    for i in range(0x7FFF0000):
+        for x in range(-w+14, 0, 1):
+            for i in range(3):
                 img.seek(x % 4 * 3 + i)
                 get_image(img, colors, buffer)
 
                 mainbuff.blit(buffer, x, -1)
                 # now prepare and send
                 lin = list()
-                for j in xrange(LedClientBase.NUMLEDS):
+                for j in range(LedClientBase.NUMLEDS):
                     (xx, yy) = LedClientBase.seq_2_pos(j)
                     rgb_tuple = mainbuff.get_xy(xx, yy)
                     r, g, b = rgb_tuple
 
                     lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-                LedClientBase.send("".join(lin))
+                LedClientBase.send(b"".join(lin))
 
                 time.sleep(0.08)
 
@@ -96,10 +96,13 @@ def getPaletteInRgb(img):
 
 def get_image(img, colors, buffer):
     W, H = img.size
-    for x in xrange(W):
-        for y in xrange(H):
+    for x in range(W):
+        for y in range(H):
             p = img.getpixel((x, y))
-            p = colors[p]
+            try:
+                p = colors[p]
+            except TypeError:
+                pass
             rgb = (float(p[0] / 255.0),
                    float(p[1] / 255.0),
                    float(p[2] / 255.0))
