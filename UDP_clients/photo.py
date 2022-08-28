@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Read an image, show statically.
 
@@ -23,7 +23,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-#	print repr(aa)
+#	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -50,17 +50,17 @@ def main(args):
 
 	t = 0.0
 
-	for i in xrange(0x7FFF0000):
+	for i in range(0x7FFF0000):
 
 
 		# now prepare and send
 		lin = list()
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			rgb_tuple = mainbuff.get_xy(xx,yy)
 
 			lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-		LedClientBase.send("".join(lin))
+		LedClientBase.send(b"".join(lin))
 
 		time.sleep(0.250)
 		t += 0.250
@@ -71,7 +71,7 @@ def main(args):
 
 
 def read_image(name,buffer):
-	if not isinstance(name,basestring):
+	if not isinstance(name,str):
 		raise ValueError("expect string as name.")
 	if not isinstance(buffer,hex.HexBuff):
 		raise ValueError("expect hex.HexBuff object as buffer.")
@@ -97,15 +97,15 @@ def read_image(name,buffer):
 	cos30 = math.cos(30*math.pi/180.0)
 	HX_STEP = H/(12*cos30)	# base step size from one hex to neighbor.
 	HX_ROWDIST = HX_STEP*cos30  # step size from one row to next vertically.
-	print "HX_STEP = %.3f" % (HX_STEP,)
-	print "HX_ROWDIST = %.3f" % (HX_ROWDIST,)
+	print("HX_STEP = %.3f" % (HX_STEP,))
+	print("HX_ROWDIST = %.3f" % (HX_ROWDIST,))
 
-	for y in xrange(H):
+	for y in range(H):
 		#print "y=%d" % y
 		py = float(y)
 		hy0 = int(py/HX_ROWDIST)*2
 		hy1 = hy0+2
-		for x in xrange(W):
+		for x in range(W):
 			px = float(x)
 			if (hy0&2):
 				# odd line.
@@ -120,7 +120,7 @@ def read_image(name,buffer):
 			po = ((hx00,hy0),(hx00+2,hy0),(hx10,hy1),(hx10+2,hy1))
 			bd2 = 1.0e24
 			b = 0
-			for j in xrange(4):
+			for j in range(4):
 				hx,hy = po[j]
 				hx = HX_STEP*hx*0.5
 				hy = HX_ROWDIST*hy*0.5
@@ -139,8 +139,8 @@ def read_image(name,buffer):
 				tt = t[j]
 				t[j] = (tt[0]+1,tt[1]+p[0],tt[2]+p[1],tt[3]+p[2])
 
-	for j in xrange(64):
-		for i in xrange(64):
+	for j in range(64):
+		for i in range(64):
 			tt = t[i+64*j]
 			f = tt[0]*255.0
 			if f>0.0:
