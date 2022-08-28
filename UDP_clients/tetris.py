@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # program to play tetris on frozen-bottle setup using cursor-key input on terminal.
 
@@ -29,10 +29,10 @@ BRICK_CROOK  = brickdef( ((-1,0),(0,0),(1,0),(0,1)) , 4 )
 all_brickdefs = (BRICK_BAR,BRICK_CURV,BRICK_DIAMOND,BRICK_CROOK)
 
 colrgb = (
-	"\x00\x00\x00","\xE0\x00\x00","\x00\xE0\x00","\x00\x00\xE0",
-	"\xC0\xC0\x00","\xC0\xA0\x50","\x00\x00\x00","\x00\x00\x00",
-	"\x00\x00\x00","\x00\x00\x00","\x00\x00\x00","\x00\x00\x00",
-	"\x00\x00\x00","\x00\x00\x00","\xE0\xE0\xE0","\x60\x60\x60"
+	b"\x00\x00\x00",b"\xE0\x00\x00",b"\x00\xE0\x00",b"\x00\x00\xE0",
+	b"\xC0\xC0\x00",b"\xC0\xA0\x50",b"\x00\x00\x00",b"\x00\x00\x00",
+	b"\x00\x00\x00",b"\x00\x00\x00",b"\x00\x00\x00",b"\x00\x00\x00",
+	b"\x00\x00\x00",b"\x00\x00\x00",b"\xE0\xE0\xE0",b"\x60\x60\x60"
 )
 
 class brick(object):
@@ -50,7 +50,7 @@ class brick(object):
 		self.dir = 0
 		self.slide_right = True
 		valid=False
-		for h in xrange(self.h,-1,-1):
+		for h in range(self.h,-1,-1):
 			if self.doesfit(self.w,h,self.xforms[self.dir]):
 				self.h = h
 				valid=True
@@ -123,9 +123,9 @@ class brick(object):
 				self.field.set_wh(dw,dh,col)
 
 	def find_center_of_top_row(self):
-		for h in xrange(self.field.h-1,-1,-1):
+		for h in range(self.field.h-1,-1,-1):
 			mn,mx = 4096,-4096
-			for w in xrange(self.field.w):
+			for w in range(self.field.w):
 				if self.field.get_wh(w,h) is not None:
 					mn = min(mn,w)
 					mx = max(mx,w)
@@ -148,9 +148,9 @@ class game(object):
 		self.fulllines = None
 		self.score = 0
 		self.next_bdef = self.pickbrick()
-		for x in xrange(1,14,1):
+		for x in range(1,14,1):
 			self.field.set_wh(x,1,1)
-		for x in xrange(2,13,1):
+		for x in range(2,13,1):
 			self.field.set_wh(x,2,2)
 
 	def reset(self):
@@ -181,8 +181,8 @@ class game(object):
 				self.brk = brick(self.field,self.next_bdef)
 				self.brk.render(True)
 				self.next_bdef = self.pickbrick()
-				#print "added new brick"
-			except Exception,ex:
+				#print("added new brick")
+			except Exception:
 				# cannot spawn new brick. game lost.
 				self.state=2
 				return
@@ -268,7 +268,7 @@ def main(args):
 	parser.add_argument("-p","--port",type=int,help="UDP port number")
 	aa = parser.parse_args()
 
-	print repr(aa)
+	print(repr(aa))
 
 	port = DEFAULT_PORT
 	address = "127.0.0.1"
@@ -305,7 +305,7 @@ def main(args):
 
 	gam = game(field)
 
-	for i in xrange(0x7FFF0000):
+	for i in range(0x7FFF0000):
 
 		# do game.
 		c = []
@@ -322,7 +322,7 @@ def main(args):
 
 		# convert to color-LED-string
 		lin = list()
-		for j in xrange(LedClientBase.NUMLEDS):
+		for j in range(LedClientBase.NUMLEDS):
 			(xx,yy) = LedClientBase.seq_2_pos(j)
 			colidx = field.get_xy(xx,yy)
 			if colidx is None:
@@ -331,14 +331,14 @@ def main(args):
 
 		# build scoreline
 		_s = gam.score
-		_s = "".join(colrgb[15*((_s>>b)&1)] for b in xrange(12))
+		_s = b"".join(colrgb[15*((_s>>b)&1)] for b in range(12))
 		_s = colrgb[gam.next_bdef.colorindex] + _s
-		_s = mix_col_liness(_s,"".join(lin[-13:]),2,1)
+		_s = mix_col_liness(_s,b"".join(lin[-13:]),2,1)
 		del lin[-13:]
 		lin.append(_s)
 
 		#send
-		LedClientBase.send("".join(lin))
+		LedClientBase.send(b"".join(lin))
 
 		#loop-delay
 		time.sleep(0.1)
@@ -351,9 +351,9 @@ def main(args):
 
 def find_full_lines(field):
 	res = list()
-	for h in xrange(field.h):
+	for h in range(field.h):
 		bm=0
-		for w in xrange(field.w):
+		for w in range(field.w):
 			c = field.get_wh(w,h)
 			if c is not None:
 				if c==0:
@@ -366,13 +366,13 @@ def find_full_lines(field):
 
 def highlight_lines(field,lines):
 	for h in lines:
-		for w in xrange(field.w):
+		for w in range(field.w):
 			if field.get_wh(w,h) is not None:
 				field.set_wh(w,h,14)
 
 def move_down_rest(field,fulllines):
 	# make mapping-list to map new lines from old.
-	maph = range(field.h)
+	maph = list(range(field.h))
 	rem = fulllines[:]
 	rem.sort()
 	rem.reverse()
@@ -381,15 +381,15 @@ def move_down_rest(field,fulllines):
 	while len(maph)<field.h:
 		maph.append(-1)
 	# Oh Dreck. Wie runterschieben?? Zeilen sind nicht gleichlang...
-	for h in xrange(field.h):
+	for h in range(field.h):
 		from_h = maph[h]
 		if from_h<0:	# clear line
-			for w in xrange(field.w):
+			for w in range(field.w):
 				if field.get_wh(w,h) is not None:
 					field.set_wh(w,h,0)
 		elif from_h!=h:
 			# copy from [from_h]
-			for w in xrange(field.w):
+			for w in range(field.w):
 				if field.get_wh(w,h) is not None:
 					val = field.get_wh(w,from_h)
 					if val is None:
@@ -405,16 +405,17 @@ def mix_col_liness(lin1,lin2,fac1,fac2):
 		raise ValueError("bad factors. need integers, >=1. have "+repr((fac1,fac2)))
 	sm = fac1+fac2
 	res = list()
-	for i in xrange(len(lin1)/3):
+	for i in range(len(lin1)//3):
 		p1=lin1[3*i:3*i+3]
 		p2=lin2[3*i:3*i+3]
-		res.append( chr((ord(p1[0])*fac1+ord(p2[0])*fac2)//sm) + chr((ord(p1[1])*fac1+ord(p2[1])*fac2)//sm) + chr((ord(p1[2])*fac1+ord(p2[2])*fac2)//sm) )
-	return "".join(res)
+		val1, val2, val3 = (p1[0]*fac1+p2[0]*fac2)//sm, (p1[1]*fac1+p2[1]*fac2)//sm, (p1[2]*fac1+p2[2]*fac2)//sm
+		res.append(LedClientBase.rgbF_2_bytes((val1/100, val2/100, val3/100)))
+	return b"".join(res)
 
 def clearboard(field,game):
 	game.reset()
-	for h in xrange(field.h):
-		for w in xrange(field.w):
+	for h in range(field.h):
+		for w in range(field.w):
 			if field.get_wh(w,h) is not None:
 				field.set_wh(w,h,0)
 

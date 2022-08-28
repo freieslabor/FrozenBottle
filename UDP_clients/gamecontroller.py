@@ -7,7 +7,7 @@ import struct, array
 from fcntl import ioctl
 from threading import Thread
 import sys
-from Queue import Queue, Empty
+from queue import Queue, Empty
 import time
 import traceback
 
@@ -88,7 +88,7 @@ BUTTON2NONCANON = {
 	"dpad_left": "\x1b[D",
 	"dpad_down": "\x1b[B",
 	"a": "\x1b[A",
-        "b": "\x1b[1",
+	"b": "\x1b[1",
 	"start": "\n",
 }
 
@@ -182,7 +182,7 @@ class GameController(Thread):
 		except Exception as e:
 			with open("/tmp/frozen-bottle-gamepad.log", "a") as f:
 				traceback.print_exc(file=f)
-                        self.running = False
+				self.running = False
 
 	def getch(self):
 		try:
