@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Read an image, show statically.
 
@@ -21,7 +21,7 @@ def main(args):
     parser.add_argument("-p", "--port", type=int, help="UDP port number")
     aa = parser.parse_args()
 
-    #	print repr(aa)
+    #	print(repr(aa))
 
     port = DEFAULT_PORT
     address = "127.0.0.1"
@@ -44,21 +44,21 @@ def main(args):
     # now connect to socket.
     LedClientBase.connect(address, port)
 
-    w = w / 2
-    for i in xrange(0x7FFF0000):
-        for y in xrange(-int(h) + 42, 1, 14):
-            for x in xrange(-w + 14, 0, 1):
+    w = w // 2
+    for i in range(0x7FFF0000):
+        for y in range(-int(h) + 42, 1, 14):
+            for x in range(-w + 14, 0, 1):
                 mainbuff.blit(im, int(y * 0.5 - 0.5) + x, y)
 
                 # now prepare and send
                 lin = list()
-                for j in xrange(LedClientBase.NUMLEDS):
+                for j in range(LedClientBase.NUMLEDS):
                     (xx, yy) = LedClientBase.seq_2_pos(j)
                     rgb_tuple = mainbuff.get_xy(xx, yy)
                     r, g, b = rgb_tuple
 
                     lin.append(LedClientBase.rgbF_2_bytes(rgb_tuple))
-                LedClientBase.send("".join(lin))
+                LedClientBase.send(b"".join(lin))
 
                 time.sleep(0.05)
 
@@ -103,7 +103,7 @@ def pixel_to_hex(x, y, size):
 
 
 def read_image(name):
-    if not isinstance(name, basestring):
+    if not isinstance(name, str):
         raise ValueError("expect string as name.")
     im = PIL.Image.open(name)
     W, H = im.size
@@ -123,15 +123,15 @@ def read_image(name):
 
     buffer = hex.HexBuff(W, H, 0, 0, (0.2, 0.2, 0.2))
 
-    print W, H
-    for x in xrange(W):
-        for y in xrange(H):
+    print(W, H)
+    for x in range(W):
+        for y in range(H):
             p = im.getpixel((x, y))
             rgb = (float(p[0] / 255.0), float(p[1] / 255.0), float(p[2] /
                                                                    255.0))
             buffer.set_xy(x, H - y, rgb)
             if rgb != buffer.get_xy(x, H - y):
-                print x, y
+                print(x, y)
 
     return W, H, buffer
 
