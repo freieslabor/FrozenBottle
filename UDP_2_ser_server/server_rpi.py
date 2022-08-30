@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # server program to forward RGB data from UDP packets
 # to serialport as XGRB 1555
@@ -10,7 +10,7 @@ import math
 import socket
 import sys
 import time
-import neopixel
+import rpi_ws281x as neopixel
 
 
 UDPport = 8901
@@ -49,29 +49,29 @@ def main(args):
 	sock.bind(("0.0.0.0",UDPport))
 
 	# initialize the strip.
-	print "... create ..."
-	strip = neopixel.Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+	print("... create ...")
+	strip = neopixel.Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, strip_type=neopixel.WS2811_STRIP_RGB)
 	# Intialize the library (must be called once before other functions).
-	print "... done ... start ..."
+	print("... done ... start ...")
 	strip.begin()
-	print "... done ..."
+	print("... done ...")
 
 	load_default_gammacurves()
 
-	print "start loop, listen-port %u" % UDPport
+	print("start loop, listen-port {UDPport}")
 
 	data = sock.recv(10000)
 
 
 	try:
 		while(data):
-			## #print "UDP data %s" % repr(data)[:55]
+			## #print(f"UDP data {repr(data)[:55]}")
 			proc_input(data)
 			data = sock.recv(10000)
 	except socket.timeout:
 		sock.close()
 
-	print "exiting..."
+	print("exiting...")
 	time.sleep(0.25)
 
 	return 0
@@ -94,28 +94,28 @@ def proc_input(dat):
 	while len(arr) < 3*n:
 		arr.append(0)
 
-	for i in xrange(0,3*n,3):
+	for i in range(0,3*n,3):
 		# get 8-bit values
 		c24 = dat[i:i+3]
-		arr[i+0] = ord(c24[0])
-		arr[i+1] = ord(c24[1])
-		arr[i+2] = ord(c24[2])
+		arr[i+0] = c24[0]
+		arr[i+1] = c24[1]
+		arr[i+2] = c24[2]
 
 	# filter .....
 	arr = fix_and_filter(arr)
 
 	# send to neopixel
-	for i in xrange(0,3*n,3):
+	for i in range(0,3*n,3):
 		strip.setPixelColor(i//3,neopixel.Color( * arr[i:i+3] ))
 
 	strip.show()
 
 #	if not (count%10):
-#		print "dat = " + repr(dat)
-#		print "arr = " + repr(arr)
+#		print(f"dat = {repr(dat)}")
+#		print(f"arr = {repr(arr)}")
 
 #	if not (count%100):
-#		print "count = %d" % (count,)
+#		print(f"count = {count}")
 
 
 # mapping for the various types.
@@ -176,9 +176,9 @@ chr_2_gammano = {'w':1,'g':2,'b':3,'l':0}
 
 
 gamma4 = list()
-for i in xrange(4):
+for i in range(4):
 	sb = list()
-	for j in xrange(4):
+	for j in range(4):
 		sb.append([0][:]*256)
 	gamma4.append(sb)
 
@@ -187,12 +187,12 @@ def load_default_gammacurves():
 
 	global gamma4
 
-	for zn in xrange(NUM_GAMMA_CURVES):
-		for rgb in xrange(3):
+	for zn in range(NUM_GAMMA_CURVES):
+		for rgb in range(3):
 			A = gamma_curve_cal_values[zn][rgb][0]
 			g = gamma_curve_cal_values[zn][rgb][1]
 
-			for i in xrange(256):
+			for i in range(256):
 				val = int( 255.0*A*math.pow(i/255.0,g) + 0.5 )
 				if val>255:
 					val=255
@@ -206,7 +206,7 @@ def fix_and_filter(ar):
 	summax = POWERLIMIT*numleds
 	sumpwr = 0
 
-	for i in xrange(numleds):
+	for i in range(numleds):
 		i3 = i*3
 		r=ar[i3+0];
 		g=ar[i3+1];
@@ -237,7 +237,7 @@ def fix_and_filter(ar):
 
 	if sumpwr > summax:
 		quot = float(summax)/float(sumpwr)
-		for i in xrange(len(ar)):
+		for i in range(len(ar)):
 			ar[i] = int(ar[i]*quot+0.5)
 
 	return ar
