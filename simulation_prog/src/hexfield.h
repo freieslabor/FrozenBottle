@@ -1,6 +1,7 @@
 #ifndef HEXFIELD_H
 #define HEXFIELD_H
 
+#include <math.h>
 #include <vector>
 
 // representation is right-skewed rectangular.
