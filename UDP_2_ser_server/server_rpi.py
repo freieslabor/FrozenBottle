@@ -11,6 +11,7 @@ import socket
 import sys
 import time
 import rpi_ws281x as neopixel
+import select
 
 
 UDPport = 8901
@@ -60,14 +61,17 @@ def main(args):
 
 	print("start loop, listen-port {UDPport}")
 
-	data = sock.recv(10000)
-
+	inputs = [sock]
+	data = None
 
 	try:
-		while(data):
-			## #print(f"UDP data {repr(data)[:55]}")
-			proc_input(data)
-			data = sock.recv(10000)
+		while True:
+			infds, outfds, errfds = select.select(inputs, [], [], 0.001)
+			if len(infds) != 0:
+				## #print(f"UDP data {repr(data)[:55]}")
+				data = sock.recv(10000)
+			if data:
+				proc_input(data)
 	except socket.timeout:
 		sock.close()
 
