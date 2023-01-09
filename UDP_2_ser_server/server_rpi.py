@@ -5,7 +5,6 @@
 # it supports a mapping to swap green and blue for some LEDs.
 
 
-import argparse
 import math
 import socket
 import sys
@@ -66,7 +65,7 @@ def main(args):
 
 	try:
 		while True:
-			infds, outfds, errfds = select.select(inputs, [], [], 0.001)
+			infds, _, _ = select.select(inputs, [], [], 0.001)
 			if len(infds) != 0:
 				## #print(f"UDP data {repr(data)[:55]}")
 				data = sock.recv(10000)
@@ -92,7 +91,6 @@ def proc_input(dat):
 	n = len(dat)//3
 	if n>maxLED:
 		n=maxLED
-	ol = list()
 	if arr is None:
 		arr=list()
 	while len(arr) < 3*n:
@@ -212,9 +210,9 @@ def fix_and_filter(ar):
 
 	for i in range(numleds):
 		i3 = i*3
-		r=ar[i3+0];
-		g=ar[i3+1];
-		b=ar[i3+2];
+		r=ar[i3+0]
+		g=ar[i3+1]
+		b=ar[i3+2]
 		if i<len(fix_map_4types):
 			sym = chr_2_gammano[fix_map_4types[i]]
 		else:
@@ -227,14 +225,14 @@ def fix_and_filter(ar):
 		# check mapping table to swap blue- and green-parts.
 		if i>=len(fix_map_GBswap) or fix_map_GBswap[i]!='b' :
 			# type 'a' is G-R-B
-			ar[i3+0]=g;
-			ar[i3+1]=r;
-			ar[i3+2]=b;
+			ar[i3+0]=g
+			ar[i3+1]=r
+			ar[i3+2]=b
 		else:
 			# type 'b' is B-R-G
-			ar[i3+0]=b;
-			ar[i3+1]=r;
-			ar[i3+2]=g;
+			ar[i3+0]=b
+			ar[i3+1]=r
+			ar[i3+2]=g
 
 		# sum power
 		sumpwr += (r+g+b)
