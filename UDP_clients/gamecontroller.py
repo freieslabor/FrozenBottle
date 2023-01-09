@@ -111,9 +111,8 @@ class GameController(Thread):
 
 		# Get the device name.
 		#buf = bytearray(63)
-		buf = array.array('c', ['\0'] * 64)
+		buf = array.array('u', ['\0'] * 64)
 		ioctl(self.jsdev, 0x80006a13 + (0x10000 * len(buf)), buf) # JSIOCGNAME(len)
-		js_name = buf.tostring()
 
 		# Get number of axes and buttons.
 		buf = array.array('B', [0])
