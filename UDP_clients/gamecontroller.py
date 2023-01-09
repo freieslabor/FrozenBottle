@@ -194,6 +194,7 @@ class GameController(Thread):
 if __name__ == "__main__":
 	import time
 	ctrl = GameController()
+	ctrl.start()
 	while True:
 		ch = ctrl.getch()
 		if ch:
