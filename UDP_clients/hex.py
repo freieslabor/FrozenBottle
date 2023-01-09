@@ -223,4 +223,5 @@ def read_hex_file(name,colors_as_float=False):
 
 # not to be started as a standalone program
 if __name__=="__main__":
+	import sys
 	sys.exit(main(sys.argv[1:]))
