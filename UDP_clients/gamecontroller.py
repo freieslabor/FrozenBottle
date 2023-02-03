@@ -10,6 +10,7 @@ import sys
 from queue import Queue, Empty
 import time
 import traceback
+import math
 
 # These constants were borrowed from linux/input.h
 AXIS_NAMES = {
@@ -105,6 +106,7 @@ class GameController(Thread):
 
 		self.axis_map = []
 		self.button_map = []
+		self.last_left_stick_pos = None
 
 		# Open the joystick device.
 		self.jsdev = open(fn, 'rb')
@@ -170,14 +172,21 @@ class GameController(Thread):
 							self.queue.put(button)
 
 					# axes
-					"""
 					if type & 0x02:
-						axis = axis_map[number]
-						if axis:
-							fvalue = value / 32767.0
-							axis_states[axis] = fvalue
-							print "%s: %.3f" % (axis, fvalue)
-					"""
+						axis = self.axis_map[number]
+						fvalue = value / 32767.0
+						self.axis_states[axis] = fvalue
+
+						x = self.axis_states['x']
+						y = self.axis_states['y']
+						amplitude = math.sqrt((x**2)+(y**2))
+						if amplitude > .8:
+							atan2 = int(-(math.atan2(y, x) * 3/math.pi+5.5)%6.0)
+							if self.queue.empty():
+								self.last_left_stick_pos = atan2
+								self.queue.put(atan2)
+
+
 		except Exception as e:
 			with open("/tmp/frozen-bottle-gamepad.log", "a") as f:
 				traceback.print_exc(file=f)
@@ -185,11 +194,13 @@ class GameController(Thread):
 
 	def getch(self):
 		try:
-			return BUTTON2NONCANON[self.queue.get(block=False)]
+			button = self.queue.get(block=False)
 		except Empty:
-			return None
+			return self.last_left_stick_pos
+		try:
+			return BUTTON2NONCANON[button]
 		except Exception:
-			return None
+			return button
 
 if __name__ == "__main__":
 	import time
