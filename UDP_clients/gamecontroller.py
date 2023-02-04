@@ -101,6 +101,7 @@ class GameController(Thread):
 		# state store
 		self.axis_states = {}
 		self.button_states = {}
+		self.hex_stick = -1
 
 		self.queue = Queue()
 
@@ -167,9 +168,11 @@ class GameController(Thread):
 					# buttons
 					if type & 0x01:
 						button = self.button_map[number]
+						#print("GC: ",button,number,value)
 
 						if value:
 							self.queue.put(button)
+						self.button_states[button] = value
 
 					# axes
 					if type & 0x02:
@@ -182,9 +185,12 @@ class GameController(Thread):
 						amplitude = math.sqrt((x**2)+(y**2))
 						if amplitude > .8:
 							atan2 = int(-(math.atan2(y, x) * 3/math.pi+5.5)%6.0)
+							self.hex_stick = atan2
 							if self.queue.empty():
 								self.last_left_stick_pos = atan2
 								self.queue.put(atan2)
+						else:
+							self.hex_stick = -1
 
 
 		except Exception as e:
@@ -201,6 +207,15 @@ class GameController(Thread):
 			return BUTTON2NONCANON[button]
 		except Exception:
 			return button
+
+	def get_axis6(self):
+		return self.hex_stick
+
+	def get_button(self,name):
+		if name not in self.button_states:
+			return False
+		return self.button_states[name]
+
 
 if __name__ == "__main__":
 	import time
